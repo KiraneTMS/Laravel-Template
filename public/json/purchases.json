@@ -1,0 +1,96 @@
+{
+    "crud_entity": {
+        "code": "1.1",
+        "name": "purchases",
+        "model_class": "App\\Models\\Purchase",
+        "table_name": "purchases"
+    },
+    "crud_fields": [
+        {
+            "name": "supplier_id",
+            "type": "number",
+            "label": "Supplier ID",
+            "visible_to_roles": "admin,editor"
+        },
+        {
+            "name": "purchase_date",
+            "type": "date",
+            "label": "Purchase Date",
+            "visible_to_roles": "admin,editor"
+        },
+        {
+            "name": "total_amount",
+            "type": "number",
+            "label": "Total Amount",
+            "visible_to_roles": "admin,editor"
+        },
+        {
+            "name": "description",
+            "type": "text",
+            "label": "Description",
+            "visible_to_roles": "admin,editor"
+        }
+    ],
+    "crud_validations": [
+        {
+            "field_index": 0,
+            "rule": "required"
+        },
+        {
+            "field_index": 0,
+            "rule": "numeric"
+        },
+        {
+            "field_index": 0,
+            "rule": "exists:suppliers,id"
+        },
+        {
+            "field_index": 1,
+            "rule": "required"
+        },
+        {
+            "field_index": 1,
+            "rule": "date"
+        },
+        {
+            "field_index": 2,
+            "rule": "required"
+        },
+        {
+            "field_index": 2,
+            "rule": "numeric"
+        },
+        {
+            "field_index": 2,
+            "rule": "min:0"
+        },
+        {
+            "field_index": 3,
+            "rule": "nullable"
+        },
+        {
+            "field_index": 3,
+            "rule": "string"
+        }
+    ],
+    "crud_columns": [
+        {
+            "field_name": "supplier_id"
+        },
+        {
+            "field_name": "purchase_date"
+        },
+        {
+            "field_name": "total_amount"
+        }
+    ],
+    "crud_relationships": [
+        {
+            "type": "belongsTo",
+            "related_table": "suppliers",
+            "foreign_key": "supplier_id",
+            "local_key": "id",
+            "display_column": "name"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "crud_entity": {
+        "code": "",
+        "name": "",
+        "model_class": "",
+        "table_name": ""
+    },
+    "crud_fields": [
+        {
+            "name": "",
+            "type": "",
+            "label": "",
+            "visible_to_roles": ""
+        }
+    ],
+    "crud_validations": [
+        {
+            "field_index": 0,
+            "rule": ""
+        }
+    ],
+    "crud_columns": [
+        {
+            "field_name": ""
+        }
+    ],
+    "crud_relationships": [
+        {
+            "type": "",
+            "related_table": "",
+            "foreign_key": "",
+            "local_key": ""
+        }
+    ]
+}

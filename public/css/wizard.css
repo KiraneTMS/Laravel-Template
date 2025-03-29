@@ -1,0 +1,282 @@
+.wizard-form {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+}
+
+/* Headings */
+.wizard-form h3 {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    font-weight: 700;
+    margin: 30px 0 15px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
+}
+
+/* Form sections */
+.wizard-form .form-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Form group */
+.wizard-form .form-group {
+    margin-bottom: 20px;
+}
+
+.wizard-form .form-group label {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.25px;
+}
+
+/* Inputs and selects */
+.wizard-form input[type="text"],
+.wizard-form input[type="file"],
+.wizard-form select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    color: var(--secondary-color);
+    background-color: #f9fafb;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wizard-form input[type="text"]:focus,
+.wizard-form select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(var(--primary-color), 0.2);
+    background-color: #fff;
+}
+
+/* Field group */
+.wizard-form .field-group,
+.wizard-form .validation-group,
+.wizard-form .column-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.wizard-form .field-group input,
+.wizard-form .field-group select,
+.wizard-form .validation-group select,
+.wizard-form .validation-group input,
+.wizard-form .column-group input {
+    flex: 1;
+}
+
+/* Buttons */
+.wizard-form .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.wizard-form .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--hover-color));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(var(--primary-color), 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wizard-form .btn-primary:hover {
+    background: linear-gradient(135deg, var(--hover-color), var(--primary-color));
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(var(--primary-color), 0.35);
+}
+
+.wizard-form .btn-secondary {
+    background: linear-gradient(135deg, var(--secondary-color), var(--secondary-hover-color));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(var(--secondary-color), 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wizard-form .btn-secondary:hover {
+    background: linear-gradient(135deg, var(--secondary-hover-color), var(--secondary-color));
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(var(--secondary-color), 0.35);
+}
+
+.wizard-form .btn-add {
+    background: linear-gradient(135deg, var(--primary-color), var(--hover-color));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(var(--success-color), 0.25);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.wizard-form .btn-add:hover {
+    background: linear-gradient(135deg, var(--hover-color), var(--primary-color));
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--success-color), 0.35);
+}
+
+/* Import/Export section */
+.wizard-form .import-export {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.wizard-form .input[type="file"] {
+    padding: 8px;
+}
+
+/* Submit button */
+.wizard-form button[type="submit"] {
+    margin-top: 30px;
+    width: 100%;
+    padding: 14px;
+}
+
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 200px;
+}
+
+.dropdown-display {
+    border: 1px solid #ccc;
+    padding: 8px;
+    cursor: pointer;
+    background-color: #fff;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+.dropdown-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
+.dropdown-options.show {
+    display: block;
+}
+
+.dropdown-option {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.dropdown-option:hover {
+    background-color: var(--background-color);
+}
+
+.dropdown-option.selected {
+    background-color: var(--background-color);
+}
+
+.hidden-select {
+    display: none;
+}
+
+/* Custom Alert Styles */
+.alert {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.alert-success {
+    background-color: rgba(var(--success-color), 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(var(--success-color), 0.5);
+}
+.alert-danger {
+    background-color: rgba(var(--danger-color), 0.15);
+    color: var(--danger-color);
+    border: 1px solid rgba(var(--danger-color), 0.5);
+}
+.alert-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+}
+.alert ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+.alert li {
+    list-style-type: disc;
+}
+.hidden {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .wizard-form {
+        padding: 15px;
+    }
+
+    .wizard-form h3 {
+        font-size: 1.25rem;
+    }
+
+    .wizard-form .form-section {
+        padding: 15px;
+    }
+
+    .wizard-form .field-group,
+    .wizard-form .validation-group,
+    .wizard-form .column-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .wizard-form .import-export {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .wizard-form .btn {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .wizard-form .btn-add {
+        padding: 10px;
+    }
+}

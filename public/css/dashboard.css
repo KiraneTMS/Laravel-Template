@@ -1,0 +1,124 @@
+.container {
+    padding: 20px;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    color: var(--secondary-color);
+}
+
+.dashboard-header p {
+    margin: 5px 0;
+    color: var(--hover-color);
+}
+
+.welcome-message {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--secondary-color);
+}
+
+.dropdown-container {
+    position: relative;
+    display: block;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 800px;
+}
+
+.dropdown-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+    width: 100%;
+    text-align: center;
+}
+
+.dropdown-button:hover {
+    background-color: var(--hover-color);
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    width: 100%;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 4px;
+    margin-top: 2px;
+    list-style: none;
+    padding: 0;
+    background-color: transparent;
+}
+
+.dropdown-menu.active {
+    display: block;
+}
+
+.dropdown-menu li {
+    margin: 0;
+}
+
+.dropdown-item {
+    color: var(--secondary-color);
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    font-size: 14px;
+    background-color: inherit;
+}
+
+.dropdown-item:hover {
+    background-color: var(--secondary-hover-color) !important;
+    color: var(--secondary-color);
+}
+
+.dropdown-menu li:last-child .dropdown-item {
+    border-bottom: none;
+}
+
+.dropdown-menu li:nth-child(odd) .dropdown-item {
+    background-color: var(--background-color);
+}
+
+.dropdown-menu li:nth-child(even) .dropdown-item {
+    background-color: var(--background-color);
+    filter: brightness(95%);
+}
+
+
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+}
+
+.stat-box {
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 4px;
+    text-align: center;
+    width: 30%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-box h3 {
+    margin: 0 0 10px 0;
+    color: var(--secondary-color);
+    font-size: 18px;
+}
+
+.stat-box p {
+    margin: 0;
+    color: var(--hover-color);
+    font-size: 16px;
+}

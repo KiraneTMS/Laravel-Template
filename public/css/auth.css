@@ -1,0 +1,173 @@
+/* Modal dialog centering */
+.auth-modal .modal-dialog {
+    max-width: 400px;
+    margin: 0 auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.auth-modal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    background-color: #fff;
+    border: none;
+}
+
+.auth-modal .modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--hover-color));
+    color: white;
+    border-bottom: none;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.auth-modal .modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.auth-modal .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.auth-modal .btn-close:hover {
+    opacity: 1;
+}
+
+.auth-modal .modal-body {
+    padding: 25px 30px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Form group styling */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+    font-size: 1rem;
+    display: block;
+}
+
+.input-field {
+    width: 100%;
+    max-width: 340px;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+    background-color: var(--background-color);
+    box-sizing: border-box;
+}
+
+.input-field:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    background-color: #fff;
+    outline: none;
+}
+
+/* Checkbox styling */
+.form-check {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.form-check-input {
+    margin-top: 0;
+    margin-right: 8px;
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+}
+
+/* Button container */
+.button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--hover-color));
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 340px;
+    cursor: pointer;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--hover-color), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 86, 179, 0.3);
+}
+
+.btn-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 10px 0;
+    transition: color 0.3s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-link:hover {
+    color: var(--hover-color);
+    text-decoration: underline;
+}
+
+.invalid-feedback {
+    font-size: 0.85rem;
+    margin-top: 5px;
+    color: var(--danger-color);
+    display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .auth-modal .modal-dialog {
+        max-width: 90%;
+        margin: 0 auto;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .auth-modal .modal-body {
+        padding: 20px;
+    }
+
+    .auth-modal .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .btn-primary {
+        padding: 10px 20px;
+    }
+}

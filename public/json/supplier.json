@@ -1,0 +1,103 @@
+{
+    "crud_entity": {
+        "code": "1.0",
+        "name": "suppliers",
+        "model_class": "App\\Models\\Supplier",
+        "table_name": "suppliers"
+    },
+    "crud_fields": [
+        {
+            "name": "name",
+            "type": "text",
+            "label": "Supplier Name",
+            "visible_to_roles": "admin,editor"
+        },
+        {
+            "name": "contact_email",
+            "type": "email",
+            "label": "Contact Email",
+            "visible_to_roles": "admin"
+        },
+        {
+            "name": "phone",
+            "type": "tel",
+            "label": "Phone Number",
+            "visible_to_roles": "admin,editor"
+        },
+        {
+            "name": "is_active",
+            "type": "boolean",
+            "label": "Is Active",
+            "visible_to_roles": "admin,editor"
+        }
+    ],
+    "crud_validations": [
+        {
+            "field_index": 0,
+            "rule": "required"
+        },
+        {
+            "field_index": 0,
+            "rule": "string"
+        },
+        {
+            "field_index": 0,
+            "rule": "max:255"
+        },
+        {
+            "field_index": 1,
+            "rule": "required"
+        },
+        {
+            "field_index": 1,
+            "rule": "email"
+        },
+        {
+            "field_index": 1,
+            "rule": "max:255"
+        },
+        {
+            "field_index": 2,
+            "rule": "nullable"
+        },
+        {
+            "field_index": 2,
+            "rule": "string"
+        },
+        {
+            "field_index": 2,
+            "rule": "max:20"
+        },
+        {
+            "field_index": 3,
+            "rule": "nullable"
+        },
+        {
+            "field_index": 3,
+            "rule": "boolean"
+        }
+    ],
+    "crud_columns": [
+        {
+            "field_name": "name"
+        },
+        {
+            "field_name": "contact_email"
+        },
+        {
+            "field_name": "phone"
+        },
+        {
+            "field_name": "is_active"
+        }
+    ],
+    "crud_relationships": [
+        {
+            "type": "hasMany",
+            "related_table": "purchases",
+            "foreign_key": "supplier_id",
+            "local_key": "id",
+            "display_column": "name"
+        }
+    ]
+}
