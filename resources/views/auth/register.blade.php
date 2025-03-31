@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
+@section('content')
 <link href="{{ asset('css/auth.css') }}" rel="stylesheet">
 
-@section('content')
 <div class="modal fade auth-modal" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

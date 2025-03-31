@@ -97,7 +97,7 @@
             "related_table": "purchases",
             "foreign_key": "supplier_id",
             "local_key": "id",
-            "display_column": "name"
+            "display_column": ["name"]
         }
     ]
 }

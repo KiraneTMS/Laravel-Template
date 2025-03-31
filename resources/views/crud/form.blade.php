@@ -20,7 +20,6 @@
                         @method('PUT')
                     @endif
 
-
                     @if ($visibleFields->isEmpty())
                         <p>You don’t have permission to create or edit any fields for this entity.</p>
                     @else
@@ -33,29 +32,24 @@
                                         ->relationships()
                                         ->where('foreign_key', $field->name)
                                         ->first();
-                                    // Check if entity has any hasMany relationships
-                                    $hasManyRelationship = $entity->relationships()->where('type', 'hasMany')->first();
-                                    $isDisabled = $hasManyRelationship !== null;
+                                    // Disable only if this field is explicitly tied to a hasMany relationship
+                                    $isDisabled = $relationship && $relationship->type === 'hasMany';
+                                    // Debugging: Log the field and relationship
+                                    \Illuminate\Support\Facades\Log::info("Field: {$field->name}, Relationship: " . ($relationship ? $relationship->type : 'none') . ", Disabled: " . ($isDisabled ? 'yes' : 'no'));
                                 @endphp
 
                                 @if ($relationship && $relationship->type === 'belongsTo' && str_ends_with($field->name, '_id'))
                                     @php
-                                        // Use singular form for the model name
                                         $relatedModelName = Str::singular(str_replace('_id', '', $field->name));
                                         $relatedModelClass = 'App\\Models\\' . Str::studly($relatedModelName);
-                                        $relatedTable = strtolower($relatedModelName) . 's'; // Assume plural table name
-
-                                        // Determine display column (fallback to 'name' if not set)
+                                        $relatedTable = strtolower($relatedModelName) . 's';
                                         $displayColumn = $relationship->display_column ?? 'name';
-
-                                        // Get options from related model
                                         $options = class_exists($relatedModelClass)
                                             ? $relatedModelClass::all()
                                             : collect();
                                     @endphp
                                     <select name="{{ $field->name }}" id="{{ $field->name }}"
-                                        class="form-control @error($field->name) is-invalid @enderror"
-                                        {{ $isDisabled ? 'disabled' : '' }}>
+                                        class="form-control @error($field->name) is-invalid @enderror">
                                         <option value="">Select {{ $field->label }}</option>
                                         @foreach ($options as $option)
                                             <option value="{{ $option->id }}"
@@ -66,13 +60,10 @@
                                     </select>
                                 @elseif ($relationship && $relationship->type === 'hasMany')
                                     @php
-                                        // For hasMany, fetch related records
                                         $relatedModelName = Str::singular($relationship->related_table);
                                         $relatedModelClass = 'App\\Models\\' . Str::studly($relatedModelName);
                                         $relatedRecords = $item->{$relationship->related_table} ?? collect();
-                                        $displayColumns = $relationship->display_columns ?? [
-                                            $relationship->display_column ?? 'id',
-                                        ];
+                                        $displayColumns = $relationship->display_columns ? explode(',', $relationship->display_columns) : [$relationship->display_column ?? 'id'];
                                     @endphp
                                     @if ($relatedRecords->isNotEmpty())
                                         <div class="related-records">
@@ -111,7 +102,7 @@
                         @endforeach
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" {{ $hasManyRelationship ? 'disabled' : '' }}>
+                            <button type="submit" class="btn btn-primary">
                                 {{ isset($item->id) ? 'Update' : 'Create' }}
                             </button>
                             <a href="{{ route($entity->name . '.index') }}" class="btn btn-secondary">Cancel</a>
@@ -121,13 +112,13 @@
             </div>
         </div>
     </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             document.querySelectorAll("input, select, textarea").forEach(function(element) {
                 let defaultValue = element.getAttribute("data-default-value");
 
                 element.addEventListener("focus", function() {
-                    // Check for placeholders like "-", "0", or any predefined value
                     if (this.value === defaultValue || this.value === "-" || this.value === "0") {
                         console.log("Clearing value for:", this.name);
                         this.value = "";
@@ -136,5 +127,4 @@
             });
         });
     </script>
-
 @endsection

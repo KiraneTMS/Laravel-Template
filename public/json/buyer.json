@@ -7,89 +7,22 @@
     },
     "crud_fields": [
         {
-            "name": "company_name",
-            "type": "text",
-            "label": "Company Name"
-        },
-        {
-            "name": "code",
-            "type": "text",
-            "label": "Buyer Code"
-        },
-        {
             "name": "name",
             "type": "text",
-            "label": "Buyer Name"
+            "label": "Buyer Name",
+            "visible_to_roles": "admin,editor"
         },
         {
-            "name": "user",
-            "type": "text",
-            "label": "User"
+            "name": "contact_email",
+            "type": "email",
+            "label": "Contact Email",
+            "visible_to_roles": "admin"
         },
         {
-            "name": "check_status",
-            "type": "checkbox",
-            "label": "Check Status"
-        },
-        {
-            "name": "fa_balance",
-            "type": "number",
-            "label": "FA Balance"
-        },
-        {
-            "name": "gb_balance",
-            "type": "number",
-            "label": "GB Balance"
-        },
-        {
-            "name": "sales",
-            "type": "number",
-            "label": "Sales"
-        },
-        {
-            "name": "cash",
-            "type": "number",
-            "label": "Cash"
-        },
-        {
-            "name": "deferred_gr",
-            "type": "number",
-            "label": "Deferred GR"
-        },
-        {
-            "name": "telex",
-            "type": "number",
-            "label": "Telex"
-        },
-        {
-            "name": "liquid_gr",
-            "type": "number",
-            "label": "Liquid GR"
-        },
-        {
-            "name": "sales_return",
-            "type": "number",
-            "label": "Sales Return"
-        },
-        {
-            "name": "adjustment",
-            "type": "number",
-            "label": "Adjustment"
-        },
-        {
-            "name": "outstanding",
-            "type": "number",
-            "label": "Outstanding"
-        },
-        {
-            "name": "discount",
-            "type": "number",
-            "label": "Discount"
-        },
-        {
-            "name": "commission",
-            "type": "number",
-            "label": "Commission"
+            "name": "phone",
+            "type": "tel",
+            "label": "Phone Number",
+            "visible_to_roles": "admin,editor"
         }
     ],
     "crud_validations": [
@@ -98,191 +31,32 @@
             "rule": "required"
         },
         {
-            "field_index": 0,
-            "rule": "unique:buyers,company_name"
-        },
-        {
             "field_index": 1,
-            "rule": "required"
-        },
-        {
-            "field_index": 1,
-            "rule": "unique:buyers,code"
+            "rule": "email"
         },
         {
             "field_index": 2,
-            "rule": "required"
-        },
-        {
-            "field_index": 4,
-            "rule": "boolean"
-        },
-        {
-            "field_index": 5,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 5,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 5,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 6,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 6,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 6,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 7,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 7,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 7,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 8,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 8,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 8,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 9,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 9,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 9,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 10,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 10,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 10,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 11,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 11,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 11,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 12,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 12,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 12,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 13,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 13,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 13,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 14,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 14,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 14,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 15,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 15,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 15,
-            "rule": "max:99999999999999.99"
-        },
-        {
-            "field_index": 16,
-            "rule": "numeric"
-        },
-        {
-            "field_index": 16,
-            "rule": "min:0"
-        },
-        {
-            "field_index": 16,
-            "rule": "max:99999999999999.99"
+            "rule": "nullable"
         }
     ],
     "crud_columns": [
         {
-            "field_name": "company_name"
-        },
-        {
-            "field_name": "code"
-        },
-        {
             "field_name": "name"
         },
         {
-            "field_name": "check_status"
+            "field_name": "contact_email"
         },
         {
-            "field_name": "fa_balance"
-        },
+            "field_name": "phone"
+        }
+    ],
+    "crud_relationships": [
         {
-            "field_name": "sales"
-        },
-        {
-            "field_name": "outstanding"
+            "type": "hasMany",
+            "related_table": "purchases",
+            "foreign_key": "buyer_id",
+            "local_key": "id",
+            "display_column": "name"
         }
     ]
 }

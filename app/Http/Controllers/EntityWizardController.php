@@ -21,128 +21,130 @@ class EntityWizardController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validRoles = Role::pluck('name')->toArray();
-        $rules = [
-            'crud_entity.code' => 'required|string|max:255',
-            'crud_entity.name' => 'required|string|max:255',
-            'crud_entity.model_class' => 'required|string|max:255',
-            'crud_entity.table_name' => 'required|string|max:255',
-            'crud_fields' => 'required|array',
-            'crud_fields.*.name' => 'required|string|max:255',
-            'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
-            'crud_fields.*.label' => 'required|string|max:255',
-            'crud_fields.*.visible_to_roles' => 'nullable|string',
-            'crud_validations' => 'nullable|array',
-            'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
-            'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
-            'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
-            'crud_columns' => 'required|array',
-            'crud_columns.*.field_name' => 'required|string|max:255',
-            'crud_relationships' => 'nullable|array',
-            'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
-            'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
-            'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
-            'crud_relationships.*.local_key' => 'nullable|string|max:255',
-            'crud_relationships.*.display_column' => 'nullable|string|max:255',
-        ];
+{
+    $validRoles = Role::pluck('name')->toArray();
+    $rules = [
+        'crud_entity.code' => 'required|string|max:255',
+        'crud_entity.name' => 'required|string|max:255',
+        'crud_entity.model_class' => 'required|string|max:255',
+        'crud_entity.table_name' => 'required|string|max:255',
+        'crud_fields' => 'required|array',
+        'crud_fields.*.name' => 'required|string|max:255',
+        'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
+        'crud_fields.*.label' => 'required|string|max:255',
+        'crud_fields.*.visible_to_roles' => 'nullable|string',
+        'crud_validations' => 'nullable|array',
+        'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
+        'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
+        'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
+        'crud_columns' => 'required|array',
+        'crud_columns.*.field_name' => 'required|string|max:255',
+        'crud_relationships' => 'nullable|array',
+        'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
+        'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
+        'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
+        'crud_relationships.*.local_key' => 'nullable|string|max:255',
+        'crud_relationships.*.display_column' => 'nullable|string|max:255',
+        'crud_relationships.*.display_columns' => 'nullable|string|max:65535', // For hasMany, allow longer text
+    ];
 
-        try {
-            $request->validate($rules);
-            Log::info('Validation passed');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::info('Validation failed: ' . json_encode($e->errors()));
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        }
+    try {
+        $request->validate($rules);
+        Log::info('Validation passed');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::info('Validation failed: ' . json_encode($e->errors()));
+        return redirect()->back()->withErrors($e->validator)->withInput();
+    }
 
-        try {
-            DB::beginTransaction();
-            Log::info('Transaction started');
+    try {
+        DB::beginTransaction();
+        Log::info('Transaction started');
 
-            $crudEntity = CrudEntity::create([
-                'code' => $request->input('crud_entity.code'),
-                'name' => $request->input('crud_entity.name'),
-                'model_class' => $request->input('crud_entity.model_class'),
-                'table_name' => $request->input('crud_entity.table_name'),
-            ]);
-            Log::info('CrudEntity created: ' . $crudEntity->id);
+        $crudEntity = CrudEntity::create([
+            'code' => $request->input('crud_entity.code'),
+            'name' => $request->input('crud_entity.name'),
+            'model_class' => $request->input('crud_entity.model_class'),
+            'table_name' => $request->input('crud_entity.table_name'),
+        ]);
+        Log::info('CrudEntity created: ' . $crudEntity->id);
 
-            $crudFields = $request->input('crud_fields', []);
-            Log::info('Incoming crud_fields:', $crudFields);
+        $crudFields = $request->input('crud_fields', []);
+        Log::info('Incoming crud_fields:', $crudFields);
 
-            if (empty($crudFields)) {
-                Log::warning('No crud_fields data received in request.');
-            } else {
-                foreach ($crudFields as $index => $fieldData) {
-                    $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin';
-                    Log::info('Processing field at index ' . $index . ':', $fieldData);
+        if (empty($crudFields)) {
+            Log::warning('No crud_fields data received in request.');
+        } else {
+            foreach ($crudFields as $index => $fieldData) {
+                $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin';
+                Log::info('Processing field at index ' . $index . ':', $fieldData);
 
-                    $crudField = $crudEntity->fields()->create([
-                        'name' => $fieldData['name'],
-                        'type' => $fieldData['type'],
-                        'label' => $fieldData['label'],
-                        'visible_to_roles' => $visibleToRoles,
-                    ]);
-                    Log::info('CrudField created: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
+                $crudField = $crudEntity->fields()->create([
+                    'name' => $fieldData['name'],
+                    'type' => $fieldData['type'],
+                    'label' => $fieldData['label'],
+                    'visible_to_roles' => $visibleToRoles,
+                ]);
+                Log::info('CrudField created: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
 
-                    foreach ($request->input('crud_validations', []) as $validationData) {
-                        if ($validationData['field_index'] == $index) {
-                            $ruleBase = rtrim($validationData['rule_base'], ':');
-                            $ruleParam = $validationData['rule_param'] ?? '';
-                            $rule = $ruleBase;
+                foreach ($request->input('crud_validations', []) as $validationData) {
+                    if ($validationData['field_index'] == $index) {
+                        $ruleBase = rtrim($validationData['rule_base'], ':');
+                        $ruleParam = $validationData['rule_param'] ?? '';
+                        $rule = $ruleBase;
 
-                            if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
-                                $rule .= ':0';
-                            } elseif (!empty($ruleParam)) {
-                                $rule .= ':' . $ruleParam;
-                            }
-
-                            $crudField->validations()->create([
-                                'rule' => $rule,
-                            ]);
-                            Log::info('Validation created for CrudField: ' . $crudField->id);
+                        if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
+                            $rule .= ':0';
+                        } elseif (!empty($ruleParam)) {
+                            $rule .= ':' . $ruleParam;
                         }
+
+                        $crudField->validations()->create([
+                            'rule' => $rule,
+                        ]);
+                        Log::info('Validation created for CrudField: ' . $crudField->id);
                     }
                 }
             }
-
-            foreach ($request->input('crud_columns', []) as $columnData) {
-                $crudEntity->columns()->create([
-                    'field_name' => $columnData['field_name'],
-                ]);
-                Log::info('CrudColumn created');
-            }
-
-            foreach ($request->input('crud_relationships', []) as $relData) {
-                $crudEntity->relationships()->create([
-                    'type' => $relData['type'],
-                    'related_table' => $relData['related_table'],
-                    'foreign_key' => $relData['foreign_key'],
-                    'local_key' => $relData['local_key'] ?? 'id',
-                    'display_column' => $relData['display_column'] ?? null,
-                ]);
-            }
-            Log::info('Relationships created');
-
-            $this->generateModel($crudEntity->model_class, $request->input('crud_fields'));
-            $this->generateMigration($crudEntity->table_name, $request->input('crud_fields'), $request->input('crud_relationships', []));
-            Log::info('Model and migration generated');
-
-            Artisan::call('migrate');
-            DB::commit();
-            Log::info('Transaction committed');
-
-            return redirect()->route('entity-wizard.combined_index')
-                ->with('success', 'CRUD entity created and migration applied successfully.');
-        } catch (\Exception $e) {
-            Log::error('Store failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-                Log::info('Transaction rolled back');
-            }
-            return redirect()->back()->withErrors(['error' => 'Failed to create CRUD entity: ' . $e->getMessage()]);
         }
+
+        foreach ($request->input('crud_columns', []) as $columnData) {
+            $crudEntity->columns()->create([
+                'field_name' => $columnData['field_name'],
+            ]);
+            Log::info('CrudColumn created');
+        }
+
+        foreach ($request->input('crud_relationships', []) as $relData) {
+            $crudEntity->relationships()->create([
+                'type' => $relData['type'],
+                'related_table' => $relData['related_table'],
+                'foreign_key' => $relData['foreign_key'],
+                'local_key' => $relData['local_key'] ?? 'id',
+                'display_column' => $relData['type'] !== 'hasMany' ? ($relData['display_column'] ?? null) : null,
+                'display_columns' => $relData['type'] === 'hasMany' ? ($relData['display_columns'] ?? null) : null,
+            ]);
+            Log::info('Relationship created: ' . json_encode($relData));
+        }
+
+        $this->generateModel($crudEntity->model_class, $request->input('crud_fields'));
+        $this->generateMigration($crudEntity->table_name, $request->input('crud_fields'), $request->input('crud_relationships', []));
+        Log::info('Model and migration generated');
+
+        Artisan::call('migrate');
+        DB::commit();
+        Log::info('Transaction committed');
+
+        return redirect()->route('entity-wizard.combined_index')
+            ->with('success', 'CRUD entity created and migration applied successfully.');
+    } catch (\Exception $e) {
+        Log::error('Store failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+            Log::info('Transaction rolled back');
+        }
+        return redirect()->back()->withErrors(['error' => 'Failed to create CRUD entity: ' . $e->getMessage()]);
     }
+}
 
     public function combinedIndex()
     {
@@ -403,125 +405,127 @@ EOT;
     }
 
     public function update(Request $request, $id)
-    {
-        $entity = CrudEntity::findOrFail($id);
-        $validRoles = Role::pluck('name')->toArray();
+{
+    $entity = CrudEntity::findOrFail($id);
+    $validRoles = Role::pluck('name')->toArray();
 
-        $rules = [
-            'crud_entity.code' => 'required|string|max:255|unique:crud_entities,code,' . $entity->id,
-            'crud_entity.name' => 'required|string|max:255|unique:crud_entities,name,' . $entity->id,
-            'crud_entity.model_class' => 'required|string|max:255',
-            'crud_entity.table_name' => 'required|string|max:255',
-            'crud_fields' => 'required|array',
-            'crud_fields.*.name' => 'required|string|max:255',
-            'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
-            'crud_fields.*.label' => 'required|string|max:255',
-            'crud_fields.*.visible_to_roles' => 'nullable|string',
-            'crud_validations' => 'nullable|array',
-            'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
-            'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
-            'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
-            'crud_columns' => 'required|array',
-            'crud_columns.*.field_name' => 'required|string|max:255',
-            'crud_relationships' => 'nullable|array',
-            'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
-            'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
-            'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
-            'crud_relationships.*.local_key' => 'nullable|string|max:255',
-            'crud_relationships.*.display_column' => 'nullable|string|max:255',
-        ];
+    $rules = [
+        'crud_entity.code' => 'required|string|max:255|unique:crud_entities,code,' . $entity->id,
+        'crud_entity.name' => 'required|string|max:255|unique:crud_entities,name,' . $entity->id,
+        'crud_entity.model_class' => 'required|string|max:255',
+        'crud_entity.table_name' => 'required|string|max:255',
+        'crud_fields' => 'required|array',
+        'crud_fields.*.name' => 'required|string|max:255',
+        'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
+        'crud_fields.*.label' => 'required|string|max:255',
+        'crud_fields.*.visible_to_roles' => 'nullable|string',
+        'crud_validations' => 'nullable|array',
+        'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
+        'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
+        'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
+        'crud_columns' => 'required|array',
+        'crud_columns.*.field_name' => 'required|string|max:255',
+        'crud_relationships' => 'nullable|array',
+        'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
+        'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
+        'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
+        'crud_relationships.*.local_key' => 'nullable|string|max:255',
+        'crud_relationships.*.display_column' => 'nullable|string|max:255',
+        'crud_relationships.*.display_columns' => 'nullable|string|max:65535', // For hasMany
+    ];
 
-        try {
-            $request->validate($rules);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        }
+    try {
+        $request->validate($rules);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return redirect()->back()->withErrors($e->validator)->withInput();
+    }
 
-        try {
-            DB::beginTransaction();
-            Log::info('Update transaction started for entity: ' . $entity->id);
+    try {
+        DB::beginTransaction();
+        Log::info('Update transaction started for entity: ' . $entity->id);
 
-            $entity->update([
-                'code' => $request->input('crud_entity.code'),
-                'name' => $request->input('crud_entity.name'),
-                'model_class' => $request->input('crud_entity.model_class'),
-                'table_name' => $request->input('crud_entity.table_name'),
+        $entity->update([
+            'code' => $request->input('crud_entity.code'),
+            'name' => $request->input('crud_entity.name'),
+            'model_class' => $request->input('crud_entity.model_class'),
+            'table_name' => $request->input('crud_entity.table_name'),
+        ]);
+        Log::info('CrudEntity updated: ' . $entity->id);
+
+        Log::info('Incoming crud_fields:', $request->input('crud_fields', []));
+
+        $entity->fields()->delete();
+        foreach ($request->input('crud_fields', []) as $index => $fieldData) {
+            $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin';
+
+            $crudField = $entity->fields()->create([
+                'name' => $fieldData['name'],
+                'type' => $fieldData['type'],
+                'label' => $fieldData['label'],
+                'visible_to_roles' => $visibleToRoles,
             ]);
-            Log::info('CrudEntity updated: ' . $entity->id);
+            Log::info('CrudField updated: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
 
-            Log::info('Incoming crud_fields:', $request->input('crud_fields', []));
+            foreach ($request->input('crud_validations', []) as $validationData) {
+                if ($validationData['field_index'] == $index) {
+                    $ruleBase = rtrim($validationData['rule_base'], ':');
+                    $ruleParam = $validationData['rule_param'] ?? '';
+                    $rule = $ruleBase;
 
-            $entity->fields()->delete();
-            foreach ($request->input('crud_fields', []) as $index => $fieldData) {
-                $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin'; // Direct string
-
-                $crudField = $entity->fields()->create([
-                    'name' => $fieldData['name'],
-                    'type' => $fieldData['type'],
-                    'label' => $fieldData['label'],
-                    'visible_to_roles' => $visibleToRoles,
-                ]);
-                Log::info('CrudField updated: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
-
-                foreach ($request->input('crud_validations', []) as $validationData) {
-                    if ($validationData['field_index'] == $index) {
-                        $ruleBase = rtrim($validationData['rule_base'], ':');
-                        $ruleParam = $validationData['rule_param'] ?? '';
-                        $rule = $ruleBase;
-
-                        if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
-                            $rule .= ':0';
-                        } elseif (!empty($ruleParam)) {
-                            $rule .= ':' . $ruleParam;
-                        }
-
-                        $crudField->validations()->create([
-                            'rule' => $rule,
-                        ]);
+                    if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
+                        $rule .= ':0';
+                    } elseif (!empty($ruleParam)) {
+                        $rule .= ':' . $ruleParam;
                     }
+
+                    $crudField->validations()->create([
+                        'rule' => $rule,
+                    ]);
                 }
             }
-
-            $entity->columns()->delete();
-            foreach ($request->input('crud_columns', []) as $columnData) {
-                $entity->columns()->create([
-                    'field_name' => $columnData['field_name'],
-                ]);
-                Log::info('CrudColumn updated');
-            }
-
-            $entity->relationships()->delete();
-            $relationships = $request->input('crud_relationships', []);
-            foreach ($relationships as $relData) {
-                $entity->relationships()->create([
-                    'type' => $relData['type'],
-                    'related_table' => $relData['related_table'],
-                    'foreign_key' => $relData['foreign_key'],
-                    'local_key' => $relData['local_key'] ?? 'id',
-                    'display_column' => $relData['display_column'] ?? null,
-                ]);
-            }
-            Log::info('Relationships updated');
-
-            $this->updateModel($entity->model_class, $request->input('crud_fields'), $relationships);
-            $this->updateMigrationAndTable($entity->table_name, $request->input('crud_fields'), $relationships);
-            Log::info('Model and migration updated');
-
-            Artisan::call('migrate');
-            DB::commit();
-            Log::info('Update transaction committed');
-
-            return redirect()->route('entity-wizard.combined_index')
-                ->with('success', 'CRUD entity updated and migration applied successfully.');
-        } catch (\Exception $e) {
-            Log::error('Update failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-                Log::info('Update transaction rolled back');
-            }
-            return redirect()->back()->withErrors(['error' => 'Failed to update CRUD entity: ' . $e->getMessage()]);
         }
+
+        $entity->columns()->delete();
+        foreach ($request->input('crud_columns', []) as $columnData) {
+            $entity->columns()->create([
+                'field_name' => $columnData['field_name'],
+            ]);
+            Log::info('CrudColumn updated');
+        }
+
+        $entity->relationships()->delete();
+        $relationships = $request->input('crud_relationships', []);
+        foreach ($relationships as $relData) {
+            $entity->relationships()->create([
+                'type' => $relData['type'],
+                'related_table' => $relData['related_table'],
+                'foreign_key' => $relData['foreign_key'],
+                'local_key' => $relData['local_key'] ?? 'id',
+                'display_column' => $relData['type'] !== 'hasMany' ? ($relData['display_column'] ?? null) : null,
+                'display_columns' => $relData['type'] === 'hasMany' ? ($relData['display_columns'] ?? null) : null,
+            ]);
+            Log::info('Relationship updated: ' . json_encode($relData));
+        }
+
+        $this->updateModel($entity->model_class, $request->input('crud_fields'), $relationships);
+        $this->updateMigrationAndTable($entity->table_name, $request->input('crud_fields'), $relationships);
+        Log::info('Model and migration updated');
+
+        Artisan::call('migrate');
+        DB::commit();
+        Log::info('Update transaction committed');
+
+        return redirect()->route('entity-wizard.combined_index')
+            ->with('success', 'CRUD entity updated and migration applied successfully.');
+    } catch (\Exception $e) {
+        Log::error('Update failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+            Log::info('Update transaction rolled back');
+        }
+        return redirect()->back()->withErrors(['error' => 'Failed to update CRUD entity: ' . $e->getMessage()]);
     }
+}
 
     protected function updateModel($modelClass, $fields, $relationships = [])
     {

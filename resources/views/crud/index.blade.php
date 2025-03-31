@@ -21,6 +21,22 @@
             </button>
         </div>
 
+        <!-- Generate Buttons for hasMany Relationships -->
+        @php
+            $hasManyRelationships = $entity->relationships()->where('type', 'hasMany')->get();
+        @endphp
+        @if ($hasManyRelationships->isNotEmpty())
+            <div class="related-actions button-section">
+                @foreach ($hasManyRelationships as $relationship)
+                    <a href="#" class="btn btn-secondary add-related-btn" 
+                       data-related-table="{{ $relationship->related_table }}"
+                       data-local-key="{{ $relationship->local_key }}">
+                        <i class="fas fa-plus"></i> Add {{ ucfirst(Str::singular($relationship->related_table)) }}
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
         <div class="search-section">
             <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search...">
         </div>
@@ -93,6 +109,11 @@
 
                 editBtn.disabled = checkedCount !== 1; // Enable only if exactly one is checked
                 deleteBtn.disabled = checkedCount === 0; // Enable if one or more are checked
+
+                // Update related action buttons visibility/enablement
+                document.querySelectorAll('.add-related-btn').forEach(btn => {
+                    btn.style.display = checkedCount === 1 ? 'inline-block' : 'none';
+                });
             }
 
             // Select all checkbox
@@ -110,7 +131,6 @@
                     const row = this.closest('tr');
                     row.classList.toggle('table-active', this.checked);
 
-                    // Update select all checkbox state
                     const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
                     const someChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
                     selectAll.checked = allChecked;
@@ -162,7 +182,7 @@
                     form.submit();
                 }
             });
-        });
+
 
         function sortTable(n) {
             let table = document.getElementById("dataTable");
