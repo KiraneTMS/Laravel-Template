@@ -44,6 +44,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::put("/$entity/{id}", [CrudController::class, 'update'])->name("$entity.update");
                 Route::delete("/$entity/{id}", [CrudController::class, 'destroy'])->name("$entity.destroy");
                 Route::get("/$entity/report", [CrudController::class, 'report'])->name("$entity.report");
+                Route::delete("/$entity/batch-delete", [CrudController::class, 'batchDelete'])->name("$entity.batchDelete");
             }
         }
     }

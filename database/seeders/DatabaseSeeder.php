@@ -55,7 +55,6 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'status'],
             ['field_name' => 'packages'],
         ]);
-        // No relationships for WebProperty in this case
 
         WebProperty::create([
             'webname' => 'Dynamic CRUD Manager',
@@ -117,22 +116,21 @@ class DatabaseSeeder extends Seeder
                 'type' => 'hasMany',
                 'related_table' => 'crud_fields',
                 'foreign_key' => 'crud_entity_id',
-                'local_key' => 'id',
-                'display_column' => 'name'
+                'local_key' => 'id','display_columns' => ['name'],
             ],
             [
                 'type' => 'hasMany',
                 'related_table' => 'crud_columns',
                 'foreign_key' => 'crud_entity_id',
                 'local_key' => 'id',
-                'display_column' => 'field_name'
+                'display_columns' => ['field_name'],
             ],
             [
                 'type' => 'hasMany',
                 'related_table' => 'crud_relationships',
                 'foreign_key' => 'crud_entity_id',
                 'local_key' => 'id',
-                'display_column' => 'related_table'
+                'display_columns' => ['related_table'],
             ],
         ]);
 
@@ -179,14 +177,14 @@ class DatabaseSeeder extends Seeder
                 'related_table' => 'crud_entities',
                 'foreign_key' => 'crud_entity_id',
                 'local_key' => 'id',
-                'display_column' => 'name' // Display entity name instead of ID
+                'display_columns' => ['name'],
             ],
             [
                 'type' => 'hasMany',
                 'related_table' => 'crud_validations',
                 'foreign_key' => 'crud_field_id',
                 'local_key' => 'id',
-                'display_column' => 'rule' // Display validation rule instead of ID
+                'display_columns' => ['rule'],
             ],
         ]);
 
@@ -227,7 +225,7 @@ class DatabaseSeeder extends Seeder
             'related_table' => 'crud_entities',
             'foreign_key' => 'crud_entity_id',
             'local_key' => 'id',
-            'display_column' => 'name' // Display entity name instead of ID
+            'display_columns' => ['name'],
         ]);
 
         // 5. CrudValidations
@@ -267,7 +265,7 @@ class DatabaseSeeder extends Seeder
             'related_table' => 'crud_fields',
             'foreign_key' => 'crud_field_id',
             'local_key' => 'id',
-            'display_column' => 'name' // Display field name instead of ID
+            'display_columns' => ['name'],
         ]);
 
         // 6. Roles
@@ -308,7 +306,7 @@ class DatabaseSeeder extends Seeder
             'related_table' => 'users',
             'foreign_key' => 'role_id',  // pivot table column referencing roles
             'local_key' => 'id',         // roles table primary key
-            'display_column' => 'name',
+            'display_columns' => ['name'],
         ]);
 
         // Seed roles
@@ -361,7 +359,7 @@ class DatabaseSeeder extends Seeder
             'related_table' => 'roles',
             'foreign_key' => 'user_id',  // pivot table column referencing users
             'local_key' => 'id',         // users table primary key
-            'display_column' => 'name',
+            'display_columns' => ['name'],
         ]);
 
         // Seed users and assign roles

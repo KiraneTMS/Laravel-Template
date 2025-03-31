@@ -15,7 +15,7 @@ class CreateCrudRelationshipsTable extends Migration
             $table->string('related_table');
             $table->string('foreign_key');
             $table->string('local_key')->default('id');
-            $table->string('display_column')->nullable();
+            $table->json('display_columns')->nullable();
             $table->timestamps();
 
             $table->foreign('crud_entity_id')

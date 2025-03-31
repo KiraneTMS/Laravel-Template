@@ -27,21 +27,25 @@
                         @foreach ($visibleFields as $field)
                             <div class="form-group">
                                 <label for="{{ $field->name }}">{{ $field->label }}</label>
-                                @if (str_ends_with($field->name, '_id'))
+                                @php
+                                    // Check if this field is part of a relationship
+                                    $relationship = $entity
+                                        ->relationships()
+                                        ->where('foreign_key', $field->name)
+                                        ->first();
+                                    // Check if entity has any hasMany relationships
+                                    $hasManyRelationship = $entity->relationships()->where('type', 'hasMany')->first();
+                                    $isDisabled = $hasManyRelationship !== null;
+                                @endphp
+
+                                @if ($relationship && $relationship->type === 'belongsTo' && str_ends_with($field->name, '_id'))
                                     @php
                                         // Use singular form for the model name
                                         $relatedModelName = Str::singular(str_replace('_id', '', $field->name));
                                         $relatedModelClass = 'App\\Models\\' . Str::studly($relatedModelName);
                                         $relatedTable = strtolower($relatedModelName) . 's'; // Assume plural table name
 
-                                        // Fetch the relationship data for this entity and field
-                                        $relationship = $entity
-                                            ->relationships()
-                                            ->where('type', 'belongsTo') // Assuming this is a belongsTo relationship
-                                            ->where('foreign_key', $field->name)
-                                            ->first();
-
-                                        // Determine display column (fallback to 'name' if no relationship or display_column is set)
+                                        // Determine display column (fallback to 'name' if not set)
                                         $displayColumn = $relationship->display_column ?? 'name';
 
                                         // Get options from related model
@@ -50,7 +54,8 @@
                                             : collect();
                                     @endphp
                                     <select name="{{ $field->name }}" id="{{ $field->name }}"
-                                        class="form-control @error($field->name) is-invalid @enderror">
+                                        class="form-control @error($field->name) is-invalid @enderror"
+                                        {{ $isDisabled ? 'disabled' : '' }}>
                                         <option value="">Select {{ $field->label }}</option>
                                         @foreach ($options as $option)
                                             <option value="{{ $option->id }}"
@@ -59,16 +64,45 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                @elseif ($relationship && $relationship->type === 'hasMany')
+                                    @php
+                                        // For hasMany, fetch related records
+                                        $relatedModelName = Str::singular($relationship->related_table);
+                                        $relatedModelClass = 'App\\Models\\' . Str::studly($relatedModelName);
+                                        $relatedRecords = $item->{$relationship->related_table} ?? collect();
+                                        $displayColumns = $relationship->display_columns ?? [
+                                            $relationship->display_column ?? 'id',
+                                        ];
+                                    @endphp
+                                    @if ($relatedRecords->isNotEmpty())
+                                        <div class="related-records">
+                                            <ul>
+                                                @foreach ($relatedRecords as $record)
+                                                    <li>
+                                                        @foreach ($displayColumns as $column)
+                                                            {{ $record->$column ?? 'N/A' }}
+                                                            @if (!$loop->last)
+                                                                -
+                                                            @endif
+                                                        @endforeach
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @else
+                                        <p>No related {{ $relationship->related_table }} found.</p>
+                                    @endif
                                 @elseif ($field->type === 'checkbox')
                                     <input type="hidden" name="{{ $field->name }}" value="0">
                                     <input type="checkbox" name="{{ $field->name }}" id="{{ $field->name }}"
                                         value="1"
                                         {{ old($field->name, $item->{$field->name} ?? false) ? 'checked' : '' }}
-                                        class="form-check-input">
+                                        class="form-check-input" {{ $isDisabled ? 'disabled' : '' }}>
                                 @else
                                     <input type="{{ $field->type }}" name="{{ $field->name }}" id="{{ $field->name }}"
                                         value="{{ old($field->name, $item->{$field->name} ?? '') }}"
-                                        class="form-control @error($field->name) is-invalid @enderror">
+                                        class="form-control @error($field->name) is-invalid @enderror"
+                                        {{ $isDisabled ? 'disabled' : '' }}>
                                 @endif
                                 @error($field->name)
                                     <span class="invalid-feedback">{{ $message }}</span>
@@ -77,8 +111,9 @@
                         @endforeach
 
                         <div class="form-actions">
-                            <button type="submit"
-                                class="btn btn-primary">{{ isset($item->id) ? 'Update' : 'Create' }}</button>
+                            <button type="submit" class="btn btn-primary" {{ $hasManyRelationship ? 'disabled' : '' }}>
+                                {{ isset($item->id) ? 'Update' : 'Create' }}
+                            </button>
                             <a href="{{ route($entity->name . '.index') }}" class="btn btn-secondary">Cancel</a>
                         </div>
                     @endif

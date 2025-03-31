@@ -9,7 +9,6 @@ use App\Models\WebProperty;
 use App\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 
@@ -187,10 +186,10 @@ EOT;
                     return \$this->hasMany($relatedModel::class, '{$rel['foreign_key']}');
                 }
             EOT;
-                        }
-                    }
+            }
+        }
 
-                    $modelContent = <<<EOT
+        $modelContent = <<<EOT
             <?php
 
             namespace $namespace;
@@ -211,61 +210,61 @@ EOT;
     }
 
     protected function generateMigration($tableName, $fields, $relationships = [])
-{
-    $fieldDefinitions = '';
-    $foreignKeys = '';
+    {
+        $fieldDefinitions = '';
+        $foreignKeys = '';
 
-    // Map HTML input types to Laravel schema types
-    $typeMap = [
-        'text' => '$table->string(\'{{name}}\')',
-        'number' => '$table->decimal(\'{{name}}\', 16, 2)',
-        'email' => '$table->string(\'{{name}}\')',
-        'password' => '$table->string(\'{{name}}\')',
-        'date' => '$table->date(\'{{name}}\')',
-        'datetime-local' => '$table->dateTime(\'{{name}}\')',
-        'time' => '$table->time(\'{{name}}\')',
-        'checkbox' => '$table->boolean(\'{{name}}\')',
-        'radio' => '$table->string(\'{{name}}\')', // Radio typically stores a string value
-        'file' => '$table->string(\'{{name}}\')', // Stores file path as string
-        'hidden' => '$table->string(\'{{name}}\')',
-        'color' => '$table->string(\'{{name}}\')', // Stores color code (e.g., #FFFFFF)
-        'range' => '$table->integer(\'{{name}}\')',
-        'tel' => '$table->string(\'{{name}}\')',
-        'url' => '$table->string(\'{{name}}\')',
-    ];
+        // Map HTML input types to Laravel schema types
+        $typeMap = [
+            'text' => '$table->string(\'{{name}}\')',
+            'number' => '$table->decimal(\'{{name}}\', 16, 2)',
+            'email' => '$table->string(\'{{name}}\')',
+            'password' => '$table->string(\'{{name}}\')',
+            'date' => '$table->date(\'{{name}}\')',
+            'datetime-local' => '$table->dateTime(\'{{name}}\')',
+            'time' => '$table->time(\'{{name}}\')',
+            'checkbox' => '$table->boolean(\'{{name}}\')',
+            'radio' => '$table->string(\'{{name}}\')', // Radio typically stores a string value
+            'file' => '$table->string(\'{{name}}\')', // Stores file path as string
+            'hidden' => '$table->string(\'{{name}}\')',
+            'color' => '$table->string(\'{{name}}\')', // Stores color code (e.g., #FFFFFF)
+            'range' => '$table->integer(\'{{name}}\')',
+            'tel' => '$table->string(\'{{name}}\')',
+            'url' => '$table->string(\'{{name}}\')',
+        ];
 
-    // Collect foreign key fields from relationships
-    $foreignKeyFields = [];
-    foreach ($relationships as $rel) {
-        if ($rel['type'] === 'belongsTo') {
-            $foreignKeyFields[$rel['foreign_key']] = [
-                'related_table' => $rel['related_table'],
-                'local_key' => $rel['local_key'] ?? 'id',
-            ];
+        // Collect foreign key fields from relationships
+        $foreignKeyFields = [];
+        foreach ($relationships as $rel) {
+            if ($rel['type'] === 'belongsTo') {
+                $foreignKeyFields[$rel['foreign_key']] = [
+                    'related_table' => $rel['related_table'],
+                    'local_key' => $rel['local_key'] ?? 'id',
+                ];
+            }
         }
-    }
 
-    // Generate field definitions, skipping duplicates for foreign keys
-    foreach ($fields as $field) {
-        $fieldName = $field['name'];
-        if (isset($foreignKeyFields[$fieldName])) {
-            $fieldDefinitions .= "            \$table->unsignedBigInteger('$fieldName');\n";
-        } elseif (isset($typeMap[$field['type']])) {
-            $template = $typeMap[$field['type']];
-            $fieldDefinitions .= "            " . str_replace('{{name}}', $fieldName, $template) . ";\n";
+        // Generate field definitions, skipping duplicates for foreign keys
+        foreach ($fields as $field) {
+            $fieldName = $field['name'];
+            if (isset($foreignKeyFields[$fieldName])) {
+                $fieldDefinitions .= "            \$table->unsignedBigInteger('$fieldName');\n";
+            } elseif (isset($typeMap[$field['type']])) {
+                $template = $typeMap[$field['type']];
+                $fieldDefinitions .= "            " . str_replace('{{name}}', $fieldName, $template) . ";\n";
+            }
         }
-    }
 
-    // Generate foreign key constraints
-    foreach ($foreignKeyFields as $fieldName => $foreignData) {
-        $foreignKeys .= "            \$table->foreign('$fieldName')
+        // Generate foreign key constraints
+        foreach ($foreignKeyFields as $fieldName => $foreignData) {
+            $foreignKeys .= "            \$table->foreign('$fieldName')
                 ->references('{$foreignData['local_key']}')
                 ->on('{$foreignData['related_table']}')
                 ->onDelete('cascade');\n";
-    }
+        }
 
-    // Migration content
-    $migrationContent = <<<EOT
+        // Migration content
+        $migrationContent = <<<EOT
     <?php
 
     use Illuminate\Database\Migrations\Migration;
@@ -291,10 +290,10 @@ EOT;
     }
     EOT;
 
-    $timestamp = now()->format('Y_m_d_His');
-    $filePath = database_path("migrations/{$timestamp}_create_{$tableName}_table.php");
-    file_put_contents($filePath, $migrationContent);
-}
+        $timestamp = now()->format('Y_m_d_His');
+        $filePath = database_path("migrations/{$timestamp}_create_{$tableName}_table.php");
+        file_put_contents($filePath, $migrationContent);
+    }
 
     protected function mapFieldToColumn($name, $type)
     {
@@ -396,261 +395,261 @@ EOT;
     }
 
     public function edit($id)
-{
-    $webProperty = WebProperty::firstOrFail();
-    $entity = CrudEntity::with(['fields.validations', 'columns', 'relationships'])->findOrFail($id);
-    $validRoles = Role::pluck('name')->toArray();
-    return view('entity_wizard.create', compact('entity', 'webProperty', 'validRoles')); // Pass validRoles for visibility options
-}
-
-public function update(Request $request, $id)
-{
-    $entity = CrudEntity::findOrFail($id);
-    $validRoles = Role::pluck('name')->toArray();
-
-    $rules = [
-        'crud_entity.code' => 'required|string|max:255|unique:crud_entities,code,' . $entity->id,
-        'crud_entity.name' => 'required|string|max:255|unique:crud_entities,name,' . $entity->id,
-        'crud_entity.model_class' => 'required|string|max:255',
-        'crud_entity.table_name' => 'required|string|max:255',
-        'crud_fields' => 'required|array',
-        'crud_fields.*.name' => 'required|string|max:255',
-        'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
-        'crud_fields.*.label' => 'required|string|max:255',
-        'crud_fields.*.visible_to_roles' => 'nullable|string', // Changed to string
-        'crud_validations' => 'nullable|array',
-        'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
-        'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
-        'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
-        'crud_columns' => 'required|array',
-        'crud_columns.*.field_name' => 'required|string|max:255',
-        'crud_relationships' => 'nullable|array',
-        'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
-        'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
-        'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
-        'crud_relationships.*.local_key' => 'nullable|string|max:255',
-        'crud_relationships.*.display_column' => 'nullable|string|max:255',
-    ];
-
-    try {
-        $request->validate($rules);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return redirect()->back()->withErrors($e->validator)->withInput();
+    {
+        $webProperty = WebProperty::firstOrFail();
+        $entity = CrudEntity::with(['fields.validations', 'columns', 'relationships'])->findOrFail($id);
+        $validRoles = Role::pluck('name')->toArray();
+        return view('entity_wizard.create', compact('entity', 'webProperty', 'validRoles')); // Pass validRoles for visibility options
     }
 
-    try {
-        DB::beginTransaction();
-        Log::info('Update transaction started for entity: ' . $entity->id);
+    public function update(Request $request, $id)
+    {
+        $entity = CrudEntity::findOrFail($id);
+        $validRoles = Role::pluck('name')->toArray();
 
-        $entity->update([
-            'code' => $request->input('crud_entity.code'),
-            'name' => $request->input('crud_entity.name'),
-            'model_class' => $request->input('crud_entity.model_class'),
-            'table_name' => $request->input('crud_entity.table_name'),
-        ]);
-        Log::info('CrudEntity updated: ' . $entity->id);
+        $rules = [
+            'crud_entity.code' => 'required|string|max:255|unique:crud_entities,code,' . $entity->id,
+            'crud_entity.name' => 'required|string|max:255|unique:crud_entities,name,' . $entity->id,
+            'crud_entity.model_class' => 'required|string|max:255',
+            'crud_entity.table_name' => 'required|string|max:255',
+            'crud_fields' => 'required|array',
+            'crud_fields.*.name' => 'required|string|max:255',
+            'crud_fields.*.type' => 'required|string|in:text,number,email,password,date,datetime-local,time,checkbox,radio,file,hidden,color,range,tel,url,textarea',
+            'crud_fields.*.label' => 'required|string|max:255',
+            'crud_fields.*.visible_to_roles' => 'nullable|string',
+            'crud_validations' => 'nullable|array',
+            'crud_validations.*.field_index' => 'required_with:crud_validations|integer|min:0',
+            'crud_validations.*.rule_base' => 'required_with:crud_validations|string',
+            'crud_validations.*.rule_param' => 'nullable|string|required_if:crud_validations.*.rule_base,min:,max:,size:,unique:,exists:,in:,not_in:,regex:',
+            'crud_columns' => 'required|array',
+            'crud_columns.*.field_name' => 'required|string|max:255',
+            'crud_relationships' => 'nullable|array',
+            'crud_relationships.*.type' => 'required_with:crud_relationships|in:belongsTo,hasMany,belongsToMany',
+            'crud_relationships.*.related_table' => 'required_with:crud_relationships|string|max:255',
+            'crud_relationships.*.foreign_key' => 'required_with:crud_relationships|string|max:255',
+            'crud_relationships.*.local_key' => 'nullable|string|max:255',
+            'crud_relationships.*.display_column' => 'nullable|string|max:255',
+        ];
 
-        Log::info('Incoming crud_fields:', $request->input('crud_fields', []));
+        try {
+            $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        }
 
-        $entity->fields()->delete();
-        foreach ($request->input('crud_fields', []) as $index => $fieldData) {
-            $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin'; // Direct string
+        try {
+            DB::beginTransaction();
+            Log::info('Update transaction started for entity: ' . $entity->id);
 
-            $crudField = $entity->fields()->create([
-                'name' => $fieldData['name'],
-                'type' => $fieldData['type'],
-                'label' => $fieldData['label'],
-                'visible_to_roles' => $visibleToRoles,
+            $entity->update([
+                'code' => $request->input('crud_entity.code'),
+                'name' => $request->input('crud_entity.name'),
+                'model_class' => $request->input('crud_entity.model_class'),
+                'table_name' => $request->input('crud_entity.table_name'),
             ]);
-            Log::info('CrudField updated: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
+            Log::info('CrudEntity updated: ' . $entity->id);
 
-            foreach ($request->input('crud_validations', []) as $validationData) {
-                if ($validationData['field_index'] == $index) {
-                    $ruleBase = rtrim($validationData['rule_base'], ':');
-                    $ruleParam = $validationData['rule_param'] ?? '';
-                    $rule = $ruleBase;
+            Log::info('Incoming crud_fields:', $request->input('crud_fields', []));
 
-                    if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
-                        $rule .= ':0';
-                    } elseif (!empty($ruleParam)) {
-                        $rule .= ':' . $ruleParam;
+            $entity->fields()->delete();
+            foreach ($request->input('crud_fields', []) as $index => $fieldData) {
+                $visibleToRoles = !empty($fieldData['visible_to_roles']) ? $fieldData['visible_to_roles'] : 'admin'; // Direct string
+
+                $crudField = $entity->fields()->create([
+                    'name' => $fieldData['name'],
+                    'type' => $fieldData['type'],
+                    'label' => $fieldData['label'],
+                    'visible_to_roles' => $visibleToRoles,
+                ]);
+                Log::info('CrudField updated: ' . $crudField->id . ' with visible_to_roles: ' . $visibleToRoles);
+
+                foreach ($request->input('crud_validations', []) as $validationData) {
+                    if ($validationData['field_index'] == $index) {
+                        $ruleBase = rtrim($validationData['rule_base'], ':');
+                        $ruleParam = $validationData['rule_param'] ?? '';
+                        $rule = $ruleBase;
+
+                        if (in_array($ruleBase, ['min', 'max']) && empty($ruleParam)) {
+                            $rule .= ':0';
+                        } elseif (!empty($ruleParam)) {
+                            $rule .= ':' . $ruleParam;
+                        }
+
+                        $crudField->validations()->create([
+                            'rule' => $rule,
+                        ]);
                     }
-
-                    $crudField->validations()->create([
-                        'rule' => $rule,
-                    ]);
                 }
             }
-        }
 
-        $entity->columns()->delete();
-        foreach ($request->input('crud_columns', []) as $columnData) {
-            $entity->columns()->create([
-                'field_name' => $columnData['field_name'],
-            ]);
-            Log::info('CrudColumn updated');
-        }
+            $entity->columns()->delete();
+            foreach ($request->input('crud_columns', []) as $columnData) {
+                $entity->columns()->create([
+                    'field_name' => $columnData['field_name'],
+                ]);
+                Log::info('CrudColumn updated');
+            }
 
-        $entity->relationships()->delete();
-        $relationships = $request->input('crud_relationships', []);
-        foreach ($relationships as $relData) {
-            $entity->relationships()->create([
-                'type' => $relData['type'],
-                'related_table' => $relData['related_table'],
-                'foreign_key' => $relData['foreign_key'],
-                'local_key' => $relData['local_key'] ?? 'id',
-                'display_column' => $relData['display_column'] ?? null,
-            ]);
-        }
-        Log::info('Relationships updated');
+            $entity->relationships()->delete();
+            $relationships = $request->input('crud_relationships', []);
+            foreach ($relationships as $relData) {
+                $entity->relationships()->create([
+                    'type' => $relData['type'],
+                    'related_table' => $relData['related_table'],
+                    'foreign_key' => $relData['foreign_key'],
+                    'local_key' => $relData['local_key'] ?? 'id',
+                    'display_column' => $relData['display_column'] ?? null,
+                ]);
+            }
+            Log::info('Relationships updated');
 
-        $this->updateModel($entity->model_class, $request->input('crud_fields'), $relationships);
-        $this->updateMigrationAndTable($entity->table_name, $request->input('crud_fields'), $relationships);
-        Log::info('Model and migration updated');
+            $this->updateModel($entity->model_class, $request->input('crud_fields'), $relationships);
+            $this->updateMigrationAndTable($entity->table_name, $request->input('crud_fields'), $relationships);
+            Log::info('Model and migration updated');
 
-        Artisan::call('migrate');
-        DB::commit();
-        Log::info('Update transaction committed');
-
-        return redirect()->route('entity-wizard.combined_index')
-            ->with('success', 'CRUD entity updated and migration applied successfully.');
-    } catch (\Exception $e) {
-        Log::error('Update failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
-        if (DB::transactionLevel() > 0) {
-            DB::rollBack();
-            Log::info('Update transaction rolled back');
-        }
-        return redirect()->back()->withErrors(['error' => 'Failed to update CRUD entity: ' . $e->getMessage()]);
-    }
-}
-
-protected function updateModel($modelClass, $fields, $relationships = [])
-{
-    $modelPath = app_path('Models/' . class_basename($modelClass) . '.php');
-
-    if (!file_exists($modelPath)) {
-        Log::warning("Model file not found at $modelPath. Generating a new one instead.");
-        $this->generateModel($modelClass, $fields, $relationships);
-        return;
-    }
-
-    // Read the existing model file content
-    $content = file_get_contents($modelPath);
-
-    // Prepare the fillable array
-    $fillable = array_map(fn($field) => "'{$field['name']}'", $fields);
-    $fillableString = "[\n        " . implode(",\n        ", $fillable) . "\n    ]";
-
-    // Update the fillable property
-    $content = preg_replace(
-        '/protected \$fillable = \[.*?\];/s',
-        "protected \$fillable = $fillableString;",
-        $content
-    );
-
-    // Prepare relationships code
-    $relationshipsCode = '';
-    foreach ($relationships as $rel) {
-        $methodName = Str::camel($rel['related_table']);
-        $type = $rel['type'];
-        $relatedModel = Str::studly($rel['related_table']);
-        $foreignKey = $rel['foreign_key'];
-        $localKey = $rel['local_key'] ?? 'id';
-
-        switch ($type) {
-            case 'belongsTo':
-                $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->belongsTo({$relatedModel}::class, '$foreignKey', '$localKey');\n    }\n\n";
-                break;
-            case 'hasMany':
-                $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->hasMany({$relatedModel}::class, '$foreignKey', '$localKey');\n    }\n\n";
-                break;
-            case 'belongsToMany':
-                $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->belongsToMany({$relatedModel}::class, '{$rel['related_table']}_{$rel['foreign_key']}', '$foreignKey', '$localKey');\n    }\n\n";
-                break;
-        }
-    }
-
-    // Remove existing relationships section if it exists
-    if (preg_match('/(\/\/ Relationships\s*\n)([\s\S]*?)(\n\s*}\s*$)/m', $content)) {
-        $content = preg_replace(
-            '/(\/\/ Relationships\s*\n)([\s\S]*?)(\n\s*}\s*$)/m',
-            "$1$relationshipsCode\n",
-            $content
-        );
-    } else {
-        // Append relationships before the closing brace, replacing the old brace
-        $content = preg_replace(
-            '/(\s*}\s*)$/',
-            "\n    // Relationships\n$relationshipsCode\n",
-            $content
-        );
-    }
-
-    // Write the updated content back to the file
-    file_put_contents($modelPath, $content);
-    Log::info("Model updated successfully: $modelPath");
-}
-
-protected function updateMigrationAndTable($tableName, $fields, $relationships = [])
-{
-    try {
-        // Step 1: Check if the table exists
-        if (!Schema::hasTable($tableName)) {
-            Log::warning("Table $tableName does not exist. Creating a new one.");
-            $this->generateMigration($tableName, $fields, $relationships); // Assuming generateMigration exists
             Artisan::call('migrate');
+            DB::commit();
+            Log::info('Update transaction committed');
+
+            return redirect()->route('entity-wizard.combined_index')
+                ->with('success', 'CRUD entity updated and migration applied successfully.');
+        } catch (\Exception $e) {
+            Log::error('Update failed: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+                Log::info('Update transaction rolled back');
+            }
+            return redirect()->back()->withErrors(['error' => 'Failed to update CRUD entity: ' . $e->getMessage()]);
+        }
+    }
+
+    protected function updateModel($modelClass, $fields, $relationships = [])
+    {
+        $modelPath = app_path('Models/' . class_basename($modelClass) . '.php');
+
+        if (!file_exists($modelPath)) {
+            Log::warning("Model file not found at $modelPath. Generating a new one instead.");
+            $this->generateModel($modelClass, $fields, $relationships);
             return;
         }
 
-        // Step 2: Generate a new migration to alter the table
-        $timestamp = now()->format('Y_m_d_His');
-        $migrationName = "alter_{$tableName}_table";
-        $fileName = "{$timestamp}_{$migrationName}.php";
-        $filePath = database_path('migrations/' . $fileName);
+        // Read the existing model file content
+        $content = file_get_contents($modelPath);
 
-        // Get current table columns
-        $currentColumns = Schema::getColumnListing($tableName);
-        $newFields = array_column($fields, 'name');
+        // Prepare the fillable array
+        $fillable = array_map(fn($field) => "'{$field['name']}'", $fields);
+        $fillableString = "[\n        " . implode(",\n        ", $fillable) . "\n    ]";
 
-        // Determine columns to add, modify, or drop
-        $columnsToAdd = '';
-        $columnsToDrop = '';
-        $foreignKeysToAdd = '';
+        // Update the fillable property
+        $content = preg_replace(
+            '/protected \$fillable = \[.*?\];/s',
+            "protected \$fillable = $fillableString;",
+            $content
+        );
 
-        foreach ($fields as $field) {
-            $columnName = $field['name'];
-            $columnDefinition = $this->mapFieldToColumn($columnName, $field['type']);
-
-            if (!in_array($columnName, $currentColumns)) {
-                $columnsToAdd .= $columnDefinition;
-            }
-            // Note: Modifying existing columns is more complex and may require manual checks or a different approach
-        }
-
-        foreach ($currentColumns as $existingColumn) {
-            if (!in_array($existingColumn, $newFields) && !in_array($existingColumn, ['id', 'created_at', 'updated_at'])) {
-                $columnsToDrop .= "\$table->dropColumn('$existingColumn');\n            ";
-            }
-        }
-
-        // Handle relationships
-        $relationshipChanges = '';
+        // Prepare relationships code
+        $relationshipsCode = '';
         foreach ($relationships as $rel) {
-            if ($rel['type'] === 'belongsTo') {
-                $foreignKey = $rel['foreign_key'];
-                $relatedTable = $rel['related_table'];
-                if (!Schema::hasColumn($tableName, $foreignKey)) {
-                    $foreignKeysToAdd .= "\$table->unsignedBigInteger('$foreignKey')->nullable();\n            ";
-                    $foreignKeysToAdd .= "\$table->foreign('$foreignKey')->references('id')->on('$relatedTable')->onDelete('set null');\n            ";
-                }
-            } elseif ($rel['type'] === 'belongsToMany') {
-                $pivotTable = Str::singular($tableName) . '_' . Str::singular($rel['related_table']);
-                if (!Schema::hasTable($pivotTable)) {
-                    $pivotMigrationName = "create_{$pivotTable}_table";
-                    $pivotFileName = "{$timestamp}_{$pivotMigrationName}.php";
-                    $pivotFilePath = database_path('migrations/' . $pivotFileName);
+            $methodName = Str::camel($rel['related_table']);
+            $type = $rel['type'];
+            $relatedModel = Str::studly($rel['related_table']);
+            $foreignKey = $rel['foreign_key'];
+            $localKey = $rel['local_key'] ?? 'id';
 
-                    $pivotContent = <<<EOT
+            switch ($type) {
+                case 'belongsTo':
+                    $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->belongsTo({$relatedModel}::class, '$foreignKey', '$localKey');\n    }\n\n";
+                    break;
+                case 'hasMany':
+                    $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->hasMany({$relatedModel}::class, '$foreignKey', '$localKey');\n    }\n\n";
+                    break;
+                case 'belongsToMany':
+                    $relationshipsCode .= "    public function $methodName()\n    {\n        return \$this->belongsToMany({$relatedModel}::class, '{$rel['related_table']}_{$rel['foreign_key']}', '$foreignKey', '$localKey');\n    }\n\n";
+                    break;
+            }
+        }
+
+        // Remove existing relationships section if it exists
+        if (preg_match('/(\/\/ Relationships\s*\n)([\s\S]*?)(\n\s*}\s*$)/m', $content)) {
+            $content = preg_replace(
+                '/(\/\/ Relationships\s*\n)([\s\S]*?)(\n\s*}\s*$)/m',
+                "$1$relationshipsCode\n",
+                $content
+            );
+        } else {
+            // Append relationships before the closing brace, replacing the old brace
+            $content = preg_replace(
+                '/(\s*}\s*)$/',
+                "\n    // Relationships\n$relationshipsCode\n",
+                $content
+            );
+        }
+
+        // Write the updated content back to the file
+        file_put_contents($modelPath, $content);
+        Log::info("Model updated successfully: $modelPath");
+    }
+
+    protected function updateMigrationAndTable($tableName, $fields, $relationships = [])
+    {
+        try {
+            // Step 1: Check if the table exists
+            if (!Schema::hasTable($tableName)) {
+                Log::warning("Table $tableName does not exist. Creating a new one.");
+                $this->generateMigration($tableName, $fields, $relationships); // Assuming generateMigration exists
+                Artisan::call('migrate');
+                return;
+            }
+
+            // Step 2: Generate a new migration to alter the table
+            $timestamp = now()->format('Y_m_d_His');
+            $migrationName = "alter_{$tableName}_table";
+            $fileName = "{$timestamp}_{$migrationName}.php";
+            $filePath = database_path('migrations/' . $fileName);
+
+            // Get current table columns
+            $currentColumns = Schema::getColumnListing($tableName);
+            $newFields = array_column($fields, 'name');
+
+            // Determine columns to add, modify, or drop
+            $columnsToAdd = '';
+            $columnsToDrop = '';
+            $foreignKeysToAdd = '';
+
+            foreach ($fields as $field) {
+                $columnName = $field['name'];
+                $columnDefinition = $this->mapFieldToColumn($columnName, $field['type']);
+
+                if (!in_array($columnName, $currentColumns)) {
+                    $columnsToAdd .= $columnDefinition;
+                }
+                // Note: Modifying existing columns is more complex and may require manual checks or a different approach
+            }
+
+            foreach ($currentColumns as $existingColumn) {
+                if (!in_array($existingColumn, $newFields) && !in_array($existingColumn, ['id', 'created_at', 'updated_at'])) {
+                    $columnsToDrop .= "\$table->dropColumn('$existingColumn');\n            ";
+                }
+            }
+
+            // Handle relationships
+            $relationshipChanges = '';
+            foreach ($relationships as $rel) {
+                if ($rel['type'] === 'belongsTo') {
+                    $foreignKey = $rel['foreign_key'];
+                    $relatedTable = $rel['related_table'];
+                    if (!Schema::hasColumn($tableName, $foreignKey)) {
+                        $foreignKeysToAdd .= "\$table->unsignedBigInteger('$foreignKey')->nullable();\n            ";
+                        $foreignKeysToAdd .= "\$table->foreign('$foreignKey')->references('id')->on('$relatedTable')->onDelete('set null');\n            ";
+                    }
+                } elseif ($rel['type'] === 'belongsToMany') {
+                    $pivotTable = Str::singular($tableName) . '_' . Str::singular($rel['related_table']);
+                    if (!Schema::hasTable($pivotTable)) {
+                        $pivotMigrationName = "create_{$pivotTable}_table";
+                        $pivotFileName = "{$timestamp}_{$pivotMigrationName}.php";
+                        $pivotFilePath = database_path('migrations/' . $pivotFileName);
+
+                        $pivotContent = <<<EOT
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -678,17 +677,17 @@ class Create{$pivotTable}Table extends Migration
     }
 }
 EOT;
-                    file_put_contents($pivotFilePath, $pivotContent);
+                        file_put_contents($pivotFilePath, $pivotContent);
+                    }
                 }
             }
-        }
 
-        // Combine all changes
-        $migrationContent = '';
-        if ($columnsToAdd || $columnsToDrop || $foreignKeysToAdd) {
-            $className = 'Alter' . Str::studly($tableName) . 'Table';
+            // Combine all changes
+            $migrationContent = '';
+            if ($columnsToAdd || $columnsToDrop || $foreignKeysToAdd) {
+                $className = 'Alter' . Str::studly($tableName) . 'Table';
 
-            $migrationContent = <<<EOT
+                $migrationContent = <<<EOT
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -714,20 +713,20 @@ class {$className} extends Migration
 }
 EOT;
 
-            file_put_contents($filePath, $migrationContent);
-            Log::info("Generated migration to alter table: $filePath");
+                file_put_contents($filePath, $migrationContent);
+                Log::info("Generated migration to alter table: $filePath");
 
-            // Step 3: Run the migration
-            Artisan::call('migrate');
-            Log::info("Migration applied for table: $tableName");
-        } else {
-            Log::info("No changes required for table: $tableName");
+                // Step 3: Run the migration
+                Artisan::call('migrate');
+                Log::info("Migration applied for table: $tableName");
+            } else {
+                Log::info("No changes required for table: $tableName");
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to update migration and table: " . $e->getMessage());
+            throw $e; // Re-throw to be handled by the caller
         }
-    } catch (\Exception $e) {
-        Log::error("Failed to update migration and table: " . $e->getMessage());
-        throw $e; // Re-throw to be handled by the caller
     }
-}
 
     public function destroy($id)
     {
