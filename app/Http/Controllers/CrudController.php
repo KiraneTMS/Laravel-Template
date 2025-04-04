@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\EntityUpdated;
 use App\Models\CrudEntity;
 use App\Models\WebProperty;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class CrudController extends Controller
 {
     protected function getEntityName(Request $request)
     {
-        $routeName = $request->route()->getName(); // e.g., "buyer.index"
-        return explode('.', $routeName)[0]; // Extracts "buyer"
+        $routeName = $request->route()->getName();
+        return explode('.', $routeName)[0];
     }
 
     public function index(Request $request)
@@ -25,20 +27,14 @@ class CrudController extends Controller
         $modelClass = $entity->model_class;
         $items = $modelClass::all();
 
-        // Get the current user's roles
         $userRoles = auth()->user()->roles->pluck('name')->toArray();
-
-        // Filter fields based on user roles
-        $crudFields = $entity->fields; // Assuming 'fields' relationship exists
+        $crudFields = $entity->fields;
         $visibleFields = $crudFields->filter(function ($field) use ($userRoles) {
             $visibleToRoles = explode(',', $field->visible_to_roles);
-            return !empty(array_intersect($userRoles, $visibleToRoles)); // Show if any role matches
+            return !empty(array_intersect($userRoles, $visibleToRoles));
         })->pluck('name')->toArray();
 
-        // Get all columns (for reference, but we'll use visible fields for display)
         $allColumns = $entity->columns->pluck('field_name')->toArray();
-
-        // Use only columns that match visible fields
         $columns = array_intersect($allColumns, $visibleFields);
 
         $webProperty = WebProperty::first();
@@ -54,7 +50,6 @@ class CrudController extends Controller
             ->firstOrFail();
 
         $userRoles = auth()->user()->roles->pluck('name')->toArray();
-
         $visibleFields = $entity->fields->filter(function ($field) use ($userRoles) {
             $visibleToRoles = explode(',', $field->visible_to_roles);
             return !empty(array_intersect($userRoles, $visibleToRoles));
@@ -100,12 +95,12 @@ class CrudController extends Controller
         return view('crud.form', compact('entity', 'item', 'visibleFields', 'webProperty'));
     }
 
-
-
     public function store(Request $request)
     {
         $entityName = $this->getEntityName($request);
         $crudEntity = CrudEntity::where('name', $entityName)->with(['fields.validations', 'relationships'])->firstOrFail();
+
+        // dd($request->all());
 
         $rules = [];
         $hasManyRelationship = $crudEntity->relationships()->where('type', 'hasMany')->first();
@@ -115,7 +110,10 @@ class CrudController extends Controller
             $fieldRules = $field->validations()->pluck('rule')->toArray();
             $rules[$field->name] = $fieldRules;
 
-            // Set default values if hasMany exists
+            if ($field->type === 'file' && $request->hasFile($field->name)) {
+                $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg', 'max:2048']);
+            }
+
             if ($hasManyRelationship) {
                 switch ($field->type) {
                     case 'number':
@@ -154,16 +152,28 @@ class CrudController extends Controller
             $modelClass = $crudEntity->model_class;
 
             DB::beginTransaction();
+
+            foreach ($crudEntity->fields as $field) {
+                if ($field->type === 'file' && $request->hasFile($field->name)) {
+                    $file = $request->file($field->name);
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs($entityName, $filename, 'public');
+                    $validated[$field->name] = $path;
+                }
+            }
+
             if ($hasManyRelationship) {
-                // Merge default values with validated data (defaults take precedence if field is missing)
                 $dataToStore = array_merge($defaultValues, array_intersect_key($validated, $defaultValues));
-                $modelClass::create($dataToStore);
+                $item = $modelClass::create($dataToStore);
             } else {
-                $modelClass::create($validated);
+                $item = $modelClass::create($validated);
             }
             DB::commit();
 
-            return redirect()->route("$entityName.index")->with('success', 'Record created successfully.');
+            event(new EntityUpdated($entityName, $item->toArray(), 'create')); // Broadcast creation
+
+            return redirect()->route("$entityName.index")
+                ->with('success', 'Record created successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
@@ -176,15 +186,12 @@ class CrudController extends Controller
     {
         $entityName = $this->getEntityName($request);
         $entity = CrudEntity::where('name', $entityName)
-            ->with(['fields', 'relationships']) // Eager load relationships
+            ->with(['fields', 'relationships'])
             ->firstOrFail();
         $modelClass = $entity->model_class;
         $item = $modelClass::findOrFail($id);
 
-        // Get the current user's roles
         $userRoles = auth()->user()->roles->pluck('name')->toArray();
-
-        // Filter fields based on user roles
         $visibleFields = $entity->fields->filter(function ($field) use ($userRoles) {
             $visibleToRoles = explode(',', $field->visible_to_roles);
             return !empty(array_intersect($userRoles, $visibleToRoles));
@@ -201,7 +208,6 @@ class CrudController extends Controller
         $entity = CrudEntity::where('name', $entityName)->with(['fields.validations', 'relationships'])->firstOrFail();
 
         $userRoles = auth()->user()->roles->pluck('name')->toArray();
-
         $visibleFields = $entity->fields->filter(function ($field) use ($userRoles) {
             $visibleToRoles = explode(',', $field->visible_to_roles);
             return !empty(array_intersect($userRoles, $visibleToRoles));
@@ -214,8 +220,10 @@ class CrudController extends Controller
             $fieldRules = $field->validations()->pluck('rule')->toArray();
             if (in_array($field->name, $visibleFields)) {
                 $rules[$field->name] = $fieldRules;
+                if ($field->type === 'file' && $request->hasFile($field->name)) {
+                    $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg', 'max:2048']);
+                }
             } else {
-                // Only allow nullable if the field isn’t required in its validations
                 $rules[$field->name] = in_array('required', $fieldRules) ? $fieldRules : ['nullable'];
             }
         }
@@ -226,8 +234,22 @@ class CrudController extends Controller
             $item = $modelClass::findOrFail($id);
 
             DB::beginTransaction();
+
+            // Handle file updates
+            foreach ($entity->fields as $field) {
+                if ($field->type === 'file' && $request->hasFile($field->name)) {
+                    // Delete old file if it exists
+                    if ($item->{$field->name} && Storage::disk('public')->exists($item->{$field->name})) {
+                        Storage::disk('public')->delete($item->{$field->name});
+                    }
+                    $file = $request->file($field->name);
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs($entityName, $filename, 'public');
+                    $validated[$field->name] = $path;
+                }
+            }
+
             if ($hasManyRelationship) {
-                // Only update fields present in the request, preserving current values for others
                 $dataToUpdate = array_intersect_key($validated, $item->getAttributes());
                 $item->update($dataToUpdate);
             } else {
@@ -235,7 +257,10 @@ class CrudController extends Controller
             }
             DB::commit();
 
-            return redirect()->route("$entityName.index")->with('success', 'Record updated successfully.');
+            event(new EntityUpdated($entityName, $item->toArray(), 'update'));
+
+            return redirect()->route("$entityName.index")
+                ->with('success', 'Record updated successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
@@ -247,30 +272,210 @@ class CrudController extends Controller
     public function destroy(Request $request, $id)
     {
         $entityName = $this->getEntityName($request);
-        $entity = CrudEntity::where('name', $entityName)->firstOrFail();
+        $entity = CrudEntity::where('name', $entityName)->with('fields')->first();
+        if (!$entity) {
+            return redirect()->route("$entityName.index")
+                ->with('error', "Entity '$entityName' not found.");
+        }
+
         $modelClass = $entity->model_class;
-        $modelClass::destroy($id);
-        return redirect()->route("crud/$entityName.index");
+        if (!class_exists($modelClass)) {
+            return redirect()->route("$entityName.index")
+                ->with('error', "Model class '$modelClass' does not exist for entity '$entityName'.");
+        }
+
+        if (!is_numeric($id) || $id <= 0) {
+            return redirect()->route("$entityName.index")
+                ->with('error', "Invalid ID provided: $id");
+        }
+
+        $record = $modelClass::find($id);
+        if (!$record) {
+            return redirect()->route("$entityName.index")
+                ->with('error', "Record with ID $id not found.");
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Delete associated files
+            foreach ($entity->fields as $field) {
+                if ($field->type === 'file' && $record->{$field->name} && Storage::disk('public')->exists($record->{$field->name})) {
+                    Storage::disk('public')->delete($record->{$field->name});
+                }
+            }
+
+            $record->delete();
+
+            // Check if the entity folder is empty and delete it
+            $entityFolder = $entityName;
+            if (Storage::disk('public')->allFiles($entityFolder) === []) {
+                Storage::disk('public')->deleteDirectory($entityFolder);
+            }
+
+            DB::commit();
+
+            event(new EntityUpdated($entityName, ['id' => $id], 'delete'));
+            return redirect()->route("$entityName.index")
+                ->with('success', 'Record deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route("$entityName.index")
+                ->with('error', 'Error deleting record: ' . $e->getMessage());
+        }
     }
 
     public function batchDelete(Request $request)
     {
         $entityName = $this->getEntityName($request);
-        $ids = json_decode($request->input('ids'), true);
+        $ids = $request->input('ids');
 
         if (!is_array($ids) || empty($ids)) {
-            return redirect()->route("$entityName.index")->with('error', 'No items selected for deletion.');
+            return response()->json(['success' => false, 'message' => 'No items selected for deletion.'], 400);
+        }
+
+        if (!array_reduce($ids, fn($carry, $id) => $carry && is_numeric($id) && $id > 0, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid IDs provided.'], 400);
         }
 
         try {
-            $modelClass = "App\\Models\\" . ucfirst($entityName);
-            $modelClass::whereIn('id', $ids)->delete();
-            return redirect()->route("$entityName.index")->with('success', 'Selected items deleted successfully.');
+            $entity = CrudEntity::where('name', $entityName)->with('fields')->first();
+            if (!$entity) {
+                return response()->json(['success' => false, 'message' => "Entity '$entityName' not found."], 404);
+            }
+
+            $modelClass = $entity->model_class;
+            if (!class_exists($modelClass)) {
+                return response()->json(['success' => false, 'message' => "Model class '$modelClass' does not exist."], 500);
+            }
+
+            DB::beginTransaction();
+
+            $records = $modelClass::whereIn('id', $ids)->get();
+            foreach ($records as $record) {
+                // Delete associated files
+                foreach ($entity->fields as $field) {
+                    if ($field->type === 'file' && $record->{$field->name} && Storage::disk('public')->exists($record->{$field->name})) {
+                        Storage::disk('public')->delete($record->{$field->name});
+                    }
+                }
+                $record->delete();
+                event(new EntityUpdated($entityName, ['id' => $record->id], 'delete'));
+            }
+
+            // Check if the entity folder is empty and delete it
+            $entityFolder = $entityName;
+            if (Storage::disk('public')->allFiles($entityFolder) === []) {
+                Storage::disk('public')->deleteDirectory($entityFolder);
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Selected items deleted successfully.']);
         } catch (\Exception $e) {
-            return redirect()->route("$entityName.index")->with('error', 'Error deleting items: ' . $e->getMessage());
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error deleting items: ' . $e->getMessage()], 500);
         }
     }
 
+    public function getRelatedEntityFields($tableName)
+    {
+        $entity = CrudEntity::where('table_name', $tableName)
+            ->with(['fields.validations'])
+            ->firstOrFail();
+
+        $modelClass = $entity->model_class;
+        $model = new $modelClass();
+        $table = $model->getTable();
+
+        $columns = Schema::getColumnListing($table);
+
+        $fields = collect($columns)->map(function ($column) use ($entity, $table) {
+            $crudField = $entity->fields->firstWhere('name', $column);
+            $columnType = Schema::getColumnType($table, $column);
+
+            $type = match ($columnType) {
+                'integer', 'bigint', 'smallint', 'tinyint' => 'number',
+                'decimal', 'float', 'double' => 'number',
+                'date' => 'date',
+                'datetime', 'timestamp' => 'datetime-local',
+                'time' => 'time',
+                'boolean' => 'checkbox',
+                'text', 'longtext' => 'textarea',
+                default => 'text',
+            };
+
+            return [
+                'name' => $column,
+                'type' => $crudField->type ?? $type,
+                'label' => $crudField->label ?? ucfirst(str_replace('_', ' ', $column)),
+                'validations' => $crudField ? $crudField->validations->pluck('rule')->toArray() : [],
+            ];
+        })->filter(function ($field) use ($entity) {
+            return !in_array($field['name'], ['id', 'created_at', 'updated_at']) || $entity->fields->contains('name', $field['name']);
+        })->values();
+
+        return response()->json([
+            'fields' => $fields,
+            'model_class' => $entity->model_class,
+        ]);
+    }
+
+    public function storeRelated(Request $request, $tableName)
+    {
+        $entity = CrudEntity::where('table_name', $tableName)
+            ->with(['fields.validations'])
+            ->firstOrFail();
+
+        $rules = [];
+        foreach ($entity->fields as $field) {
+            $fieldRules = $field->validations->pluck('rule')->toArray();
+            $rules[$field->name] = $fieldRules;
+        }
+
+        try {
+            $validated = $request->validate($rules);
+            $modelClass = $entity->model_class;
+
+            DB::beginTransaction();
+            $relatedRecord = $modelClass::create($validated);
+
+            // Update parent entity if applicable (e.g., Purchase when adding a Payment)
+            $parentEntity = null;
+            $parentItem = null;
+            if ($tableName === 'payments' && isset($validated['purchase_id'])) {
+                $parentEntity = CrudEntity::where('name', 'purchases')->first();
+                if ($parentEntity) {
+                    $parentModelClass = $parentEntity->model_class;
+                    $parentItem = $parentModelClass::find($validated['purchase_id']);
+                    if ($parentItem) {
+                        $parentItem->update([
+                            'payment_date' => $validated['payment_date'] ?? $parentItem->payment_date,
+                            'amount' => $validated['amount'] ?? $parentItem->amount,
+                            'payment_evidence' => $validated['payment_evidence'] ?? $parentItem->payment_evidence,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            // Broadcast event for the related entity
+            event(new EntityUpdated($entity->name, $relatedRecord->toArray(), 'create'));
+
+            // Broadcast event for the parent entity if it exists
+            if ($parentEntity && $parentItem) {
+                event(new EntityUpdated($parentEntity->name, $parentItem->toArray(), 'update'));
+            }
+
+            return response()->json(['success' => true, 'message' => 'Record added successfully']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => "Failed to create record: " . $e->getMessage()], 500);
+        }
+    }
 
     public function report(Request $request)
     {

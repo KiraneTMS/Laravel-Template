@@ -12,23 +12,32 @@
         {"name": "description", "type": "text", "label": "Description", "visible_to_roles": "admin,editor"},
         {"name": "payment_status", "type": "string", "label": "Payment Status", "visible_to_roles": "admin,editor"},
         {"name": "payment_method", "type": "string", "label": "Payment Method", "visible_to_roles": "admin,editor"},
-        {"name": "payment_deadline", "type": "date", "label": "Payment Deadline", "visible_to_roles": "admin,editor"}
+        {"name": "payment_deadline", "type": "date", "label": "Payment Deadline", "visible_to_roles": "admin,editor"},
+        {"name": "payment_date", "type": "date", "label": "Payment Date", "visible_to_roles": "admin,editor"},
+        {"name": "amount", "type": "number", "label": "Amount", "visible_to_roles": "admin,editor"},
+        {"name": "payment_evidence", "type": "text", "label": "Payment Evidence", "visible_to_roles": "admin,editor"}
     ],
     "crud_validations": [
         {"field_index": 0, "rule": "required"}, {"field_index": 0, "rule": "numeric"}, {"field_index": 0, "rule": "exists:suppliers,id"},
         {"field_index": 1, "rule": "required"}, {"field_index": 1, "rule": "date"},
         {"field_index": 2, "rule": "required"}, {"field_index": 2, "rule": "numeric"}, {"field_index": 2, "rule": "min:0"},
         {"field_index": 3, "rule": "nullable"}, {"field_index": 3, "rule": "string"},
-        {"field_index": 4, "rule": "required"}, {"field_index": 4, "rule": "string"},
-        {"field_index": 5, "rule": "nullable"}, {"field_index": 5, "rule": "string"},
-        {"field_index": 6, "rule": "required"}, {"field_index": 6, "rule": "date"}
+        {"field_index": 4, "rule": "required"}, {"field_index": 4, "rule": "string"}, {"field_index": 4, "rule": "in:pending,paid,overdue"},
+        {"field_index": 5, "rule": "nullable"}, {"field_index": 5, "rule": "string"}, {"field_index": 5, "rule": "in:cash,card,transfer"},
+        {"field_index": 6, "rule": "required"}, {"field_index": 6, "rule": "date"},
+        {"field_index": 7, "rule": "nullable"}, {"field_index": 7, "rule": "date"},
+        {"field_index": 8, "rule": "nullable"}, {"field_index": 8, "rule": "numeric"}, {"field_index": 8, "rule": "min:0"},
+        {"field_index": 9, "rule": "nullable"}, {"field_index": 9, "rule": "string"}
     ],
     "crud_columns": [
         {"field_name": "supplier_id"},
         {"field_name": "purchase_date"},
         {"field_name": "total_amount"},
         {"field_name": "payment_status"},
-        {"field_name": "payment_deadline"}
+        {"field_name": "payment_deadline"},
+        {"field_name": "payment_date"},
+        {"field_name": "amount"},
+        {"field_name": "payment_evidence"}
     ],
     "crud_relationships": [
         {

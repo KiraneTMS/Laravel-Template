@@ -214,6 +214,131 @@ h1 {
     cursor: not-allowed;
 }
 
+/* Custom Modal (Hidden by default) */
+.custom-modal {
+    display: none; /* Ensure it's hidden when page loads */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+    z-index: 1000;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+/* Show modal when active */
+.custom-modal.active {
+    display: flex; /* Show and center when active */
+}
+
+/* Center the modal properly */
+.custom-modal-content {
+    background: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+    padding: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Smooth animation */
+@keyframes fadeIn {
+    from {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+
+.custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--secondary-color);
+}
+
+.custom-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.custom-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--danger-color);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.custom-modal-close:hover {
+    color: var(--hover-color);
+}
+
+.custom-modal-body {
+    padding: 20px 0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--background-color);
+    color: var(--secondary-color);
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+}
+
+.custom-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--secondary-color);
+}
+
+.custom-modal-footer .btn {
+    padding: 10px 16px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .button-section {
@@ -228,5 +353,18 @@ h1 {
     .btn {
         width: 100%;
         margin-bottom: 10px;
+    }
+
+    .custom-modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .custom-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .custom-modal-footer .btn {
+        width: 100%;
     }
 }

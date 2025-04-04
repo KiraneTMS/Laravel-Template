@@ -1,0 +1,26 @@
+{
+    "crud_entity": {
+        "code": "1.2",
+        "name": "payments",
+        "model_class": "App\\Models\\Payment",
+        "table_name": "payments"
+    },
+    "crud_fields": [
+        {"name": "purchase_id", "type": "number", "label": "Purchase ID", "visible_to_roles": "admin,editor"},
+        {"name": "payment_date", "type": "date", "label": "Payment Date", "visible_to_roles": "admin,editor"},
+        {"name": "amount", "type": "number", "label": "Amount", "visible_to_roles": "admin,editor"},
+        {"name": "payment_evidence", "type": "text", "label": "Payment Evidence", "visible_to_roles": "admin,editor"}
+    ],
+    "crud_validations": [
+        {"field_index": 0, "rule": "required"}, {"field_index": 0, "rule": "numeric"},
+        {"field_index": 1, "rule": "required"}, {"field_index": 1, "rule": "date"},
+        {"field_index": 2, "rule": "required"}, {"field_index": 2, "rule": "numeric"}, {"field_index": 2, "rule": "min:0"},
+        {"field_index": 3, "rule": "nullable"}, {"field_index": 3, "rule": "string"}
+    ],
+    "crud_columns": [
+        {"field_name": "purchase_id"},
+        {"field_name": "payment_date"},
+        {"field_name": "amount"}
+    ],
+    "crud_relationships": []
+}

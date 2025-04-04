@@ -14,7 +14,8 @@
             <div class="card-body">
                 <form
                     action="{{ isset($item->id) ? route($entity->name . '.update', $item->id) : route($entity->name . '.store') }}"
-                    method="POST">
+                    method="POST"
+                    enctype="multipart/form-data"> <!-- Added enctype -->
                     @csrf
                     @if (isset($item->id))
                         @method('PUT')
@@ -27,14 +28,10 @@
                             <div class="form-group">
                                 <label for="{{ $field->name }}">{{ $field->label }}</label>
                                 @php
-                                    // Check if this field is part of a relationship
-                                    $relationship = $entity
-                                        ->relationships()
+                                    $relationship = $entity->relationships()
                                         ->where('foreign_key', $field->name)
                                         ->first();
-                                    // Disable only if this field is explicitly tied to a hasMany relationship
                                     $isDisabled = $relationship && $relationship->type === 'hasMany';
-                                    // Debugging: Log the field and relationship
                                     \Illuminate\Support\Facades\Log::info("Field: {$field->name}, Relationship: " . ($relationship ? $relationship->type : 'none') . ", Disabled: " . ($isDisabled ? 'yes' : 'no'));
                                 @endphp
 
@@ -89,6 +86,16 @@
                                         value="1"
                                         {{ old($field->name, $item->{$field->name} ?? false) ? 'checked' : '' }}
                                         class="form-check-input" {{ $isDisabled ? 'disabled' : '' }}>
+                                @elseif ($field->type === 'file')
+                                    <input type="file" name="{{ $field->name }}" id="{{ $field->name }}"
+                                        class="form-control @error($field->name) is-invalid @enderror"
+                                        accept="image/*" {{ $isDisabled ? 'disabled' : '' }}>
+                                    @if (isset($item->id) && $item->{$field->name})
+                                        <div class="mt-2">
+                                            <img src="{{ $item->{$field->name} }}" alt="{{ $field->label }}"
+                                                style="max-width: 200px;">
+                                        </div>
+                                    @endif
                                 @else
                                     <input type="{{ $field->type }}" name="{{ $field->name }}" id="{{ $field->name }}"
                                         value="{{ old($field->name, $item->{$field->name} ?? '') }}"

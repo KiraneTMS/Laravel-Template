@@ -1,0 +1,32 @@
+{
+    "crud_entity": {
+        "code": "1.4",
+        "name": "products",
+        "model_class": "App\\Models\\Product",
+        "table_name": "products"
+    },
+    "crud_fields": [
+        {"name": "product_id", "type": "number", "label": "Product ID", "visible_to_roles": "admin,manager"},
+        {"name": "product_name", "type": "text", "label": "Product Name", "visible_to_roles": "admin,manager,staff"},
+        {"name": "price", "type": "number", "label": "Price", "visible_to_roles": "admin,manager"},
+        {"name": "stock", "type": "number", "label": "Stock Quantity", "visible_to_roles": "admin,manager,staff"},
+        {"name": "description", "type": "text", "label": "Description", "visible_to_roles": "admin,manager"},
+        {"name": "image", "type": "file", "label": "Product Image", "visible_to_roles": "admin,manager"}
+    ],
+    "crud_validations": [
+        {"field_index": 0, "rule": "required"}, {"field_index": 0, "rule": "numeric"},
+        {"field_index": 1, "rule": "required"}, {"field_index": 1, "rule": "string"}, {"field_index": 1, "rule": "max:255"},
+        {"field_index": 2, "rule": "required"}, {"field_index": 2, "rule": "numeric"}, {"field_index": 2, "rule": "min:0"},
+        {"field_index": 3, "rule": "required"}, {"field_index": 3, "rule": "numeric"}, {"field_index": 3, "rule": "min:0"},
+        {"field_index": 4, "rule": "nullable"}, {"field_index": 4, "rule": "string"},
+        {"field_index": 5, "rule": "nullable"}, {"field_index": 5, "rule": "file"}, {"field_index": 5, "rule": "mimes:jpg,png,jpeg"}
+    ],
+    "crud_columns": [
+        {"field_name": "product_id"},
+        {"field_name": "product_name"},
+        {"field_name": "price"},
+        {"field_name": "stock"},
+        {"field_name": "image"}
+    ],
+    "crud_relationships": []
+}
