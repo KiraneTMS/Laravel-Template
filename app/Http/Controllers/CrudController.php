@@ -20,27 +20,46 @@ class CrudController extends Controller
         return explode('.', $routeName)[0];
     }
 
-    public function index(Request $request)
+    protected function getFileTypeFolder($mimeType)
     {
-        $entityName = $this->getEntityName($request);
-        $entity = CrudEntity::where('name', $entityName)->with(['columns', 'fields'])->firstOrFail();
-        $modelClass = $entity->model_class;
-        $items = $modelClass::all();
+        $mimeMap = [
+            'image/jpeg' => 'images',
+            'image/png' => 'images',
+            'image/jpg' => 'images',
+            'application/pdf' => 'documents',
+            'text/plain' => 'documents',
+            'application/msword' => 'documents',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'documents',
+            'video/mp4' => 'videos',
+            'video/mpeg' => 'videos',
+            'audio/mpeg' => 'audio',
+            'audio/wav' => 'audio',
+        ];
 
-        $userRoles = auth()->user()->roles->pluck('name')->toArray();
-        $crudFields = $entity->fields;
-        $visibleFields = $crudFields->filter(function ($field) use ($userRoles) {
-            $visibleToRoles = explode(',', $field->visible_to_roles);
-            return !empty(array_intersect($userRoles, $visibleToRoles));
-        })->pluck('name')->toArray();
-
-        $allColumns = $entity->columns->pluck('field_name')->toArray();
-        $columns = array_intersect($allColumns, $visibleFields);
-
-        $webProperty = WebProperty::first();
-
-        return view('crud.index', compact('entity', 'items', 'columns', 'webProperty'));
+        return $mimeMap[$mimeType] ?? 'others'; // Default to 'others' for unrecognized types
     }
+
+public function index(Request $request)
+{
+    $entityName = $this->getEntityName($request);
+    $entity = CrudEntity::where('name', $entityName)->with(['columns', 'fields'])->firstOrFail();
+    $modelClass = $entity->model_class;
+    $items = $modelClass::all();
+
+    $userRoles = auth()->user()->roles->pluck('name')->toArray();
+    $crudFields = $entity->fields;
+    $visibleFields = $crudFields->filter(function ($field) use ($userRoles) {
+        $visibleToRoles = explode(',', $field->visible_to_roles);
+        return !empty(array_intersect($userRoles, $visibleToRoles));
+    })->pluck('name')->toArray();
+
+    $allColumns = $entity->columns->pluck('field_name')->toArray();
+    $columns = array_intersect($allColumns, $visibleFields);
+
+    $webProperty = WebProperty::first();
+
+    return view('crud.index', compact('entity', 'items', 'columns', 'webProperty'));
+}
 
     public function create(Request $request)
     {
@@ -100,8 +119,6 @@ class CrudController extends Controller
         $entityName = $this->getEntityName($request);
         $crudEntity = CrudEntity::where('name', $entityName)->with(['fields.validations', 'relationships'])->firstOrFail();
 
-        // dd($request->all());
-
         $rules = [];
         $hasManyRelationship = $crudEntity->relationships()->where('type', 'hasMany')->first();
         $defaultValues = [];
@@ -111,7 +128,7 @@ class CrudController extends Controller
             $rules[$field->name] = $fieldRules;
 
             if ($field->type === 'file' && $request->hasFile($field->name)) {
-                $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg', 'max:2048']);
+                $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mpeg,wav,mp3', 'max:2048']);
             }
 
             if ($hasManyRelationship) {
@@ -157,7 +174,9 @@ class CrudController extends Controller
                 if ($field->type === 'file' && $request->hasFile($field->name)) {
                     $file = $request->file($field->name);
                     $filename = time() . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs($entityName, $filename, 'public');
+                    $fileTypeFolder = $this->getFileTypeFolder($file->getMimeType());
+                    $path = $file->storeAs("$fileTypeFolder/$entityName", $filename, 'public');
+                    \Log::info('File stored at: ' . $path);
                     $validated[$field->name] = $path;
                 }
             }
@@ -170,7 +189,7 @@ class CrudController extends Controller
             }
             DB::commit();
 
-            event(new EntityUpdated($entityName, $item->toArray(), 'create')); // Broadcast creation
+            event(new EntityUpdated($entityName, $item->toArray(), 'create'));
 
             return redirect()->route("$entityName.index")
                 ->with('success', 'Record created successfully.');
@@ -221,7 +240,7 @@ class CrudController extends Controller
             if (in_array($field->name, $visibleFields)) {
                 $rules[$field->name] = $fieldRules;
                 if ($field->type === 'file' && $request->hasFile($field->name)) {
-                    $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg', 'max:2048']);
+                    $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mpeg,wav,mp3', 'max:2048']);
                 }
             } else {
                 $rules[$field->name] = in_array('required', $fieldRules) ? $fieldRules : ['nullable'];
@@ -235,16 +254,15 @@ class CrudController extends Controller
 
             DB::beginTransaction();
 
-            // Handle file updates
             foreach ($entity->fields as $field) {
                 if ($field->type === 'file' && $request->hasFile($field->name)) {
-                    // Delete old file if it exists
                     if ($item->{$field->name} && Storage::disk('public')->exists($item->{$field->name})) {
                         Storage::disk('public')->delete($item->{$field->name});
                     }
                     $file = $request->file($field->name);
                     $filename = time() . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs($entityName, $filename, 'public');
+                    $fileTypeFolder = $this->getFileTypeFolder($file->getMimeType());
+                    $path = $file->storeAs("$fileTypeFolder/$entityName", $filename, 'public');
                     $validated[$field->name] = $path;
                 }
             }
@@ -298,7 +316,6 @@ class CrudController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete associated files
             foreach ($entity->fields as $field) {
                 if ($field->type === 'file' && $record->{$field->name} && Storage::disk('public')->exists($record->{$field->name})) {
                     Storage::disk('public')->delete($record->{$field->name});
@@ -306,12 +323,6 @@ class CrudController extends Controller
             }
 
             $record->delete();
-
-            // Check if the entity folder is empty and delete it
-            $entityFolder = $entityName;
-            if (Storage::disk('public')->allFiles($entityFolder) === []) {
-                Storage::disk('public')->deleteDirectory($entityFolder);
-            }
 
             DB::commit();
 
@@ -353,7 +364,6 @@ class CrudController extends Controller
 
             $records = $modelClass::whereIn('id', $ids)->get();
             foreach ($records as $record) {
-                // Delete associated files
                 foreach ($entity->fields as $field) {
                     if ($field->type === 'file' && $record->{$field->name} && Storage::disk('public')->exists($record->{$field->name})) {
                         Storage::disk('public')->delete($record->{$field->name});
@@ -361,12 +371,6 @@ class CrudController extends Controller
                 }
                 $record->delete();
                 event(new EntityUpdated($entityName, ['id' => $record->id], 'delete'));
-            }
-
-            // Check if the entity folder is empty and delete it
-            $entityFolder = $entityName;
-            if (Storage::disk('public')->allFiles($entityFolder) === []) {
-                Storage::disk('public')->deleteDirectory($entityFolder);
             }
 
             DB::commit();

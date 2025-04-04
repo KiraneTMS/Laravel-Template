@@ -78,7 +78,13 @@
                                     </label>
                                 </td>
                                 @foreach ($columns as $column)
-                                    <td>{{ $item->$column }}</td>
+                                    @if ($column === 'image' && $item->$column)
+                                        <td>
+                                            <span class="image-path clickable" data-image-path="{{ $item->$column }}">{{ $item->$column }}</span>
+                                        </td>
+                                    @else
+                                        <td>{{ $item->$column }}</td>
+                                    @endif
                                 @endforeach
                             </tr>
                         @endforeach
@@ -188,7 +194,7 @@
 
                     editBtn.disabled = checkedCount !== 1;
                     deleteBtn.disabled = checkedCount === 0;
-                    viewImageBtn.disabled = checkedCount !== 1; // Enable only when one row is selected
+                    viewImageBtn.disabled = checkedCount !== 1;
 
                     document.querySelectorAll('.add-related-btn').forEach(btn => {
                         btn.disabled = checkedCount !== 1;
@@ -266,23 +272,49 @@
                     }
                 });
 
-                viewImageBtn.addEventListener('click', function() {
+                // Function to open image modal (shared logic)
+                function openImageModal(imagePath) {
+                    if (imagePath) {
+                        const imageUrl = '{{ asset('storage') }}/' + imagePath;
+                        console.log('imagePath:', imagePath);
+                        console.log('imageUrl:', imageUrl);
+                        const modalImage = document.getElementById('modalImage');
+                        modalImage.src = '';
+                        modalImage.onerror = () => {
+                            console.error('Image load failed:', imageUrl);
+                            alert('Failed to load image: ' + imageUrl);
+                        };
+                        modalImage.onload = () => {
+                            console.log('Image loaded');
+                            showModal('imageModal');
+                        };
+                        modalImage.src = imageUrl;
+                    } else {
+                        alert('No image available for this record.');
+                    }
+                }
+
+                // View Image Button Handler
+                viewImageBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
                     const rowCheckboxes = getRowCheckboxes();
                     const checkedCheckbox = Array.from(rowCheckboxes).find(cb => cb.checked);
                     if (checkedCheckbox) {
                         const selectedId = checkedCheckbox.closest('tr').dataset.id;
                         const selectedRow = tableBody.querySelector(`tr[data-id="${selectedId}"]`);
-                        const imageColumnIndex = columns.indexOf('image') + 1; // +1 for checkbox column
-                        const imagePath = selectedRow.cells[imageColumnIndex].innerText;
-
-                        if (imagePath) {
-                            const imageUrl = '{{ env('APP_URL') }}/storage/' + imagePath; // Adjust based on your storage setup
-                            document.getElementById('modalImage').src = imageUrl;
-                            showModal('imageModal');
-                        } else {
-                            alert('No image available for this record.');
-                        }
+                        const imageColumnIndex = columns.indexOf('image') + 1;
+                        const imagePath = selectedRow.cells[imageColumnIndex].innerText.trim();
+                        openImageModal(imagePath);
                     }
+                });
+
+                // Clickable Image Path Handler
+                document.querySelectorAll('.image-path').forEach(element => {
+                    element.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                        const imagePath = this.getAttribute('data-image-path');
+                        openImageModal(imagePath);
+                    });
                 });
 
                 if (typeof window.Echo === 'undefined') {
@@ -310,7 +342,11 @@
                                     <span class="checkmark"></span>
                                 </label>
                             </td>
-                            ${columns.map(column => `<td>${item[column] || ''}</td>`).join('')}
+                            ${columns.map(column => `
+                                ${column === 'image' && item[column] ? 
+                                    `<td><span class="image-path clickable" data-image-path="${item[column]}">${item[column]}</span></td>` : 
+                                    `<td>${item[column] || ''}</td>`}
+                            `).join('')}
                         </tr>
                     `;
 
@@ -320,6 +356,14 @@
                         tableBody.insertAdjacentHTML('beforeend', rowHtml);
                     }
                     rebindCheckboxEvents();
+                    // Rebind image path click events after updating rows
+                    document.querySelectorAll('.image-path').forEach(element => {
+                        element.addEventListener('click', function(event) {
+                            event.stopPropagation();
+                            const imagePath = this.getAttribute('data-image-path');
+                            openImageModal(imagePath);
+                        });
+                    });
                     updateButtonState();
                 }
 

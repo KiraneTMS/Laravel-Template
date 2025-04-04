@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         WebProperty::create([
-            'webname' => 'Dynamic CRUD Manager',
+            'webname' => 'Content Management System',
             'style' => 'modern',
             'icon' => 'https://i.imgur.com/NmiMYcQ.png',
             'welcome_msg' => 'Build and manage with ease, {user}!',
