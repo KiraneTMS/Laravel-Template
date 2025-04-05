@@ -128,8 +128,19 @@ public function index(Request $request)
             $rules[$field->name] = $fieldRules;
 
             if ($field->type === 'file' && $request->hasFile($field->name)) {
-                $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mpeg,wav,mp3', 'max:2048']);
-            }
+                dd($field->file_type);
+            // Define rules based on file_type (assumes a 'file_type' column exists in fields table)
+            $fileRules = match ($field->file_type ?? 'generic') {
+                'image' => ['file', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+                'document' => ['file', 'mimes:pdf,doc,docx,txt', 'max:5120'],
+                'video' => ['file', 'mimes:mp4,mpeg,avi,mov', 'max:10240'],
+                'audio' => ['file', 'mimes:mp3,wav,ogg', 'max:5120'],
+                'archive' => ['file', 'mimes:zip,rar,7z', 'max:10240'],
+                'spreadsheet' => ['file', 'mimes:xls,xlsx,csv', 'max:2048'],
+                default => ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mp3', 'max:4096'],
+            };
+            $rules[$field->name] = array_merge($fieldRules, $fileRules);
+        }
 
             if ($hasManyRelationship) {
                 switch ($field->type) {
@@ -176,7 +187,6 @@ public function index(Request $request)
                     $filename = time() . '_' . $file->getClientOriginalName();
                     $fileTypeFolder = $this->getFileTypeFolder($file->getMimeType());
                     $path = $file->storeAs("$fileTypeFolder/$entityName", $filename, 'public');
-                    \Log::info('File stored at: ' . $path);
                     $validated[$field->name] = $path;
                 }
             }
@@ -240,7 +250,17 @@ public function index(Request $request)
             if (in_array($field->name, $visibleFields)) {
                 $rules[$field->name] = $fieldRules;
                 if ($field->type === 'file' && $request->hasFile($field->name)) {
-                    $rules[$field->name] = array_merge($fieldRules, ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mpeg,wav,mp3', 'max:2048']);
+                    // Define rules based on file_type (assumes a 'file_type' column exists in fields table)
+                    $fileRules = match ($field->file_type ?? 'generic') {
+                        'image' => ['file', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+                        'document' => ['file', 'mimes:pdf,doc,docx,txt', 'max:5120'],
+                        'video' => ['file', 'mimes:mp4,mpeg,avi,mov', 'max:10240'],
+                        'audio' => ['file', 'mimes:mp3,wav,ogg', 'max:5120'],
+                        'archive' => ['file', 'mimes:zip,rar,7z', 'max:10240'],
+                        'spreadsheet' => ['file', 'mimes:xls,xlsx,csv', 'max:2048'],
+                        default => ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mp3', 'max:4096'],
+                    };
+                    $rules[$field->name] = array_merge($fieldRules, $fileRules);
                 }
             } else {
                 $rules[$field->name] = in_array('required', $fieldRules) ? $fieldRules : ['nullable'];

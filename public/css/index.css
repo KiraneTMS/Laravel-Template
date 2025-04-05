@@ -339,13 +339,13 @@ h1 {
     padding: 10px 16px;
 }
 
-.image-path.clickable {
+.media-path.clickable {
     color: var(--primary-color);
     cursor: pointer; /* Ensures the hand cursor */
     text-decoration: underline;
 }
 
-.image-path.clickable:hover {
+.media-path.clickable:hover {
     color: #0056b3;
 }
 

@@ -1,0 +1,34 @@
+{
+    "crud_entity": {
+        "code": "1.5",
+        "name": "videos",
+        "model_class": "App\\Models\\Video",
+        "table_name": "videos"
+    },
+    "crud_fields": [
+        {"name": "video_id", "type": "number", "label": "Video ID", "visible_to_roles": "admin,moderator"},
+        {"name": "title", "type": "text", "label": "Video Title", "visible_to_roles": "admin,moderator,viewer"},
+        {"name": "duration", "type": "number", "label": "Duration (seconds)", "visible_to_roles": "admin,moderator"},
+        {"name": "video_file", "type": "file", "label": "Video File", "visible_to_roles": "admin,moderator"},
+        {"name": "thumbnail", "type": "file", "label": "Thumbnail Image", "visible_to_roles": "admin,moderator"},
+        {"name": "description", "type": "text", "label": "Video Description", "visible_to_roles": "admin,moderator,viewer"},
+        {"name": "upload_date", "type": "date", "label": "Upload Date", "visible_to_roles": "admin,moderator"}
+    ],
+    "crud_validations": [
+        {"field_index": 0, "rule": "required"}, {"field_index": 0, "rule": "numeric"},
+        {"field_index": 1, "rule": "required"}, {"field_index": 1, "rule": "string"}, {"field_index": 1, "rule": "max:255"},
+        {"field_index": 2, "rule": "required"}, {"field_index": 2, "rule": "numeric"}, {"field_index": 2, "rule": "min:1"},
+        {"field_index": 3, "rule": "required"}, {"field_index": 3, "rule": "file"}, {"field_index": 3, "rule": "mimes:mp4,mov,avi"},
+        {"field_index": 4, "rule": "nullable"}, {"field_index": 4, "rule": "file"}, {"field_index": 4, "rule": "mimes:jpg,png,jpeg"},
+        {"field_index": 5, "rule": "nullable"}, {"field_index": 5, "rule": "string"}, {"field_index": 5, "rule": "max:1000"},
+        {"field_index": 6, "rule": "required"}, {"field_index": 6, "rule": "date"}
+    ],
+    "crud_columns": [
+        {"field_name": "video_id"},
+        {"field_name": "title"},
+        {"field_name": "duration"},
+        {"field_name": "thumbnail"},
+        {"field_name": "upload_date"}
+    ],
+    "crud_relationships": []
+}
