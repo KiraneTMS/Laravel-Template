@@ -39,27 +39,30 @@ class CrudController extends Controller
         return $mimeMap[$mimeType] ?? 'others'; // Default to 'others' for unrecognized types
     }
 
-public function index(Request $request)
-{
-    $entityName = $this->getEntityName($request);
-    $entity = CrudEntity::where('name', $entityName)->with(['columns', 'fields'])->firstOrFail();
-    $modelClass = $entity->model_class;
-    $items = $modelClass::all();
+    public function index(Request $request)
+    {
+        $entityName = $this->getEntityName($request);
+        $entity = CrudEntity::where('name', $entityName)->with(['columns', 'fields', 'relationships'])->firstOrFail();
+        $modelClass = $entity->model_class;
 
-    $userRoles = auth()->user()->roles->pluck('name')->toArray();
-    $crudFields = $entity->fields;
-    $visibleFields = $crudFields->filter(function ($field) use ($userRoles) {
-        $visibleToRoles = explode(',', $field->visible_to_roles);
-        return !empty(array_intersect($userRoles, $visibleToRoles));
-    })->pluck('name')->toArray();
+        // Dynamically load all relationships
+        $relations = $entity->relationships->pluck('related_table')->all();
+        $items = $modelClass::with($relations)->get();
 
-    $allColumns = $entity->columns->pluck('field_name')->toArray();
-    $columns = array_intersect($allColumns, $visibleFields);
+        $userRoles = auth()->user()->roles->pluck('name')->toArray();
+        $crudFields = $entity->fields;
+        $visibleFields = $crudFields->filter(function ($field) use ($userRoles) {
+            $visibleToRoles = explode(',', $field->visible_to_roles);
+            return !empty(array_intersect($userRoles, $visibleToRoles));
+        })->pluck('name')->toArray();
 
-    $webProperty = WebProperty::first();
+        $allColumns = $entity->columns->pluck('field_name')->toArray();
+        $columns = array_intersect($allColumns, $visibleFields);
 
-    return view('crud.index', compact('entity', 'items', 'columns', 'webProperty'));
-}
+        $webProperty = WebProperty::first();
+
+        return view('crud.index', compact('entity', 'items', 'columns', 'webProperty'));
+    }
 
     public function create(Request $request)
     {
@@ -115,32 +118,31 @@ public function index(Request $request)
     }
 
     public function store(Request $request)
-    {
-        $entityName = $this->getEntityName($request);
-        $crudEntity = CrudEntity::where('name', $entityName)->with(['fields.validations', 'relationships'])->firstOrFail();
+{
+    $entityName = $this->getEntityName($request);
+    $crudEntity = CrudEntity::where('name', $entityName)->with(['fields.validations', 'relationships'])->firstOrFail();
 
-        $rules = [];
-        $hasManyRelationship = $crudEntity->relationships()->where('type', 'hasMany')->first();
-        $defaultValues = [];
+    $rules = [];
+    $hasManyRelationship = $crudEntity->relationships()->where('type', 'hasMany')->first();
+    $defaultValues = [];
 
-        foreach ($crudEntity->fields as $field) {
+    foreach ($crudEntity->fields as $field) {
+        if (!$field->computed) { // Skip computed fields
             $fieldRules = $field->validations()->pluck('rule')->toArray();
             $rules[$field->name] = $fieldRules;
 
             if ($field->type === 'file' && $request->hasFile($field->name)) {
-                dd($field->file_type);
-            // Define rules based on file_type (assumes a 'file_type' column exists in fields table)
-            $fileRules = match ($field->file_type ?? 'generic') {
-                'image' => ['file', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-                'document' => ['file', 'mimes:pdf,doc,docx,txt', 'max:5120'],
-                'video' => ['file', 'mimes:mp4,mpeg,avi,mov', 'max:10240'],
-                'audio' => ['file', 'mimes:mp3,wav,ogg', 'max:5120'],
-                'archive' => ['file', 'mimes:zip,rar,7z', 'max:10240'],
-                'spreadsheet' => ['file', 'mimes:xls,xlsx,csv', 'max:2048'],
-                default => ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mp3', 'max:4096'],
-            };
-            $rules[$field->name] = array_merge($fieldRules, $fileRules);
-        }
+                $fileRules = match ($field->file_type ?? 'generic') {
+                    'image' => ['file', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+                    'document' => ['file', 'mimes:pdf,doc,docx,txt', 'max:5120'],
+                    'video' => ['file', 'mimes:mp4,mpeg,avi,mov', 'max:10240'],
+                    'audio' => ['file', 'mimes:mp3,wav,ogg', 'max:5120'],
+                    'archive' => ['file', 'mimes:zip,rar,7z', 'max:10240'],
+                    'spreadsheet' => ['file', 'mimes:xls,xlsx,csv', 'max:2048'],
+                    default => ['file', 'mimes:jpeg,png,jpg,pdf,doc,docx,mp4,mp3', 'max:4096'],
+                };
+                $rules[$field->name] = array_merge($fieldRules, $fileRules);
+            }
 
             if ($hasManyRelationship) {
                 switch ($field->type) {
@@ -174,42 +176,43 @@ public function index(Request $request)
                 }
             }
         }
-
-        try {
-            $validated = $request->validate($rules);
-            $modelClass = $crudEntity->model_class;
-
-            DB::beginTransaction();
-
-            foreach ($crudEntity->fields as $field) {
-                if ($field->type === 'file' && $request->hasFile($field->name)) {
-                    $file = $request->file($field->name);
-                    $filename = time() . '_' . $file->getClientOriginalName();
-                    $fileTypeFolder = $this->getFileTypeFolder($file->getMimeType());
-                    $path = $file->storeAs("$fileTypeFolder/$entityName", $filename, 'public');
-                    $validated[$field->name] = $path;
-                }
-            }
-
-            if ($hasManyRelationship) {
-                $dataToStore = array_merge($defaultValues, array_intersect_key($validated, $defaultValues));
-                $item = $modelClass::create($dataToStore);
-            } else {
-                $item = $modelClass::create($validated);
-            }
-            DB::commit();
-
-            event(new EntityUpdated($entityName, $item->toArray(), 'create'));
-
-            return redirect()->route("$entityName.index")
-                ->with('success', 'Record created successfully.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->withErrors(['error' => "Failed to create $entityName: " . $e->getMessage()]);
-        }
     }
+
+    try {
+        $validated = $request->validate($rules);
+        $modelClass = $crudEntity->model_class;
+
+        DB::beginTransaction();
+
+        foreach ($crudEntity->fields as $field) {
+            if (!$field->computed && $field->type === 'file' && $request->hasFile($field->name)) {
+                $file = $request->file($field->name);
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $fileTypeFolder = $this->getFileTypeFolder($file->getMimeType());
+                $path = $file->storeAs("$fileTypeFolder/$entityName", $filename, 'public');
+                $validated[$field->name] = $path;
+            }
+        }
+
+        if ($hasManyRelationship) {
+            $dataToStore = array_merge($defaultValues, array_intersect_key($validated, $defaultValues));
+            $item = $modelClass::create($dataToStore);
+        } else {
+            $item = $modelClass::create($validated);
+        }
+        DB::commit();
+
+        event(new EntityUpdated($entityName, $item->toArray(), 'create'));
+
+        return redirect()->route("$entityName.index")
+            ->with('success', 'Record created successfully.');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return redirect()->back()->withErrors($e->validator)->withInput();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->withErrors(['error' => "Failed to create $entityName: " . $e->getMessage()]);
+    }
+}
 
     public function edit(Request $request, $id)
     {

@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,6 +14,8 @@ return new class extends Migration {
             $table->string('type');
             $table->string('label');
             $table->string('visible_to_roles')->default('admin');
+            $table->boolean('computed')->default(false); // New column for computed field flag
+            $table->string('formula')->nullable();       // New column for formula storage
             $table->timestamps();
         });
     }

@@ -110,13 +110,13 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'model_class'],
             ['field_name' => 'table_name'],
         ]);
-        // Relationships for CrudEntity with display_column
         $crudEntity->relationships()->createMany([
             [
                 'type' => 'hasMany',
                 'related_table' => 'crud_fields',
                 'foreign_key' => 'crud_entity_id',
-                'local_key' => 'id','display_columns' => ['name'],
+                'local_key' => 'id',
+                'display_columns' => ['name'],
             ],
             [
                 'type' => 'hasMany',
@@ -134,7 +134,7 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
-        // 3. CrudFields
+        // 3. CrudFields (Updated with computed fields)
         $crudFieldEntity = CrudEntity::create([
             'code' => '0.2',
             'name' => 'crud_fields',
@@ -147,6 +147,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'type', 'type' => 'string', 'label' => 'Field Type', 'visible_to_roles' => 'admin,editor'],
             ['name' => 'label', 'type' => 'string', 'label' => 'Label', 'visible_to_roles' => 'admin,editor'],
             ['name' => 'visible_to_roles', 'type' => 'string', 'label' => 'Visible To Roles', 'visible_to_roles' => 'admin'],
+            ['name' => 'computed', 'type' => 'checkbox', 'label' => 'Computed', 'visible_to_roles' => 'admin'],
+            ['name' => 'formula', 'type' => 'string', 'label' => 'Formula', 'visible_to_roles' => 'admin'],
         ];
         foreach ($crudFieldFields as $field) {
             $crudField = $crudFieldEntity->fields()->create($field);
@@ -155,6 +157,18 @@ class DatabaseSeeder extends Seeder
                     ['rule' => 'required'],
                     ['rule' => 'numeric'],
                     ['rule' => 'exists:crud_entities,id'],
+                ]);
+            } elseif ($field['name'] === 'computed') {
+                $crudField->validations()->createMany([
+                    ['rule' => 'boolean'],
+                    ['rule' => 'nullable'],
+                ]);
+            } elseif ($field['name'] === 'formula') {
+                $crudField->validations()->createMany([
+                    ['rule' => 'string'],
+                    ['rule' => 'max:255'],
+                    ['rule' => 'nullable'],
+                    ['rule' => 'required_if:computed,true'],
                 ]);
             } else {
                 $crudField->validations()->createMany([
@@ -169,15 +183,15 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'name'],
             ['field_name' => 'type'],
             ['field_name' => 'label'],
+            ['field_name' => 'computed'],
         ]);
-        // Relationships for CrudFields with display_column
         $crudFieldEntity->relationships()->createMany([
             [
                 'type' => 'belongsTo',
                 'related_table' => 'crud_entities',
                 'foreign_key' => 'crud_entity_id',
                 'local_key' => 'id',
-                'display_columns' => ['name'],
+                'display_column' => 'name', // Changed to singular as it's belongsTo
             ],
             [
                 'type' => 'hasMany',
@@ -219,13 +233,12 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'crud_entity_id'],
             ['field_name' => 'field_name'],
         ]);
-        // Relationships for CrudColumns with display_column
         $crudColumnEntity->relationships()->create([
             'type' => 'belongsTo',
             'related_table' => 'crud_entities',
             'foreign_key' => 'crud_entity_id',
             'local_key' => 'id',
-            'display_columns' => ['name'],
+            'display_column' => 'name',
         ]);
 
         // 5. CrudValidations
@@ -259,13 +272,12 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'crud_field_id'],
             ['field_name' => 'rule'],
         ]);
-        // Relationships for CrudValidations with display_column
         $crudValidationEntity->relationships()->create([
             'type' => 'belongsTo',
             'related_table' => 'crud_fields',
             'foreign_key' => 'crud_field_id',
             'local_key' => 'id',
-            'display_columns' => ['name'],
+            'display_column' => 'name',
         ]);
 
         // 6. Roles
@@ -300,13 +312,12 @@ class DatabaseSeeder extends Seeder
             ['field_name' => 'name'],
             ['field_name' => 'priority'],
         ]);
-        // Relationships for Roles with display_column
         $roleEntity->relationships()->create([
             'type' => 'belongsToMany',
             'related_table' => 'users',
-            'foreign_key' => 'role_id',  // pivot table column referencing roles
-            'local_key' => 'id',         // roles table primary key
-            'display_columns' => ['name'],
+            'foreign_key' => 'role_id',
+            'local_key' => 'id',
+            'display_column' => 'name',
         ]);
 
         // Seed roles
@@ -314,7 +325,7 @@ class DatabaseSeeder extends Seeder
         $editorRole = Role::create(['name' => 'editor', 'priority' => 2]);
         $userRole = Role::create(['name' => 'user', 'priority' => 3]);
 
-        // 7. Users
+        // 7. Users (Adding example computed field)
         $userEntity = CrudEntity::create([
             'code' => '0.6',
             'name' => 'user',
@@ -325,6 +336,15 @@ class DatabaseSeeder extends Seeder
             ['name' => 'name', 'type' => 'text', 'label' => 'Name'],
             ['name' => 'email', 'type' => 'text', 'label' => 'Email'],
             ['name' => 'password', 'type' => 'password', 'label' => 'Password'],
+            // Example computed field: full_email combines name and email
+            [
+                'name' => 'full_email',
+                'type' => 'text',
+                'label' => 'Full Email',
+                'computed' => true,
+                'formula' => "name . ' <' . email . '>'",
+                'visible_to_roles' => 'admin,editor'
+            ],
         ];
         foreach ($userFields as $field) {
             $crudField = $userEntity->fields()->create($field);
@@ -347,19 +367,25 @@ class DatabaseSeeder extends Seeder
                     ['rule' => 'string'],
                     ['rule' => 'min:8'],
                 ]);
+            } elseif ($field['name'] === 'full_email') {
+                $crudField->validations()->createMany([
+                    ['rule' => 'nullable'], // Computed fields typically don't need strict validation
+                    ['rule' => 'string'],
+                    ['rule' => 'max:255'],
+                ]);
             }
         }
         $userEntity->columns()->createMany([
             ['field_name' => 'name'],
             ['field_name' => 'email'],
+            // Note: full_email is not included in columns as it's computed
         ]);
-        // Relationships for Users with display_column
         $userEntity->relationships()->create([
             'type' => 'belongsToMany',
             'related_table' => 'roles',
-            'foreign_key' => 'user_id',  // pivot table column referencing users
-            'local_key' => 'id',         // users table primary key
-            'display_columns' => ['name'],
+            'foreign_key' => 'user_id',
+            'local_key' => 'id',
+            'display_column' => 'name',
         ]);
 
         // Seed users and assign roles

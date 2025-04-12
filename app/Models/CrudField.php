@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class CrudField extends Model
 {
-    protected $fillable = ['crud_entity_id', 'name', 'type', 'label', 'visible_to_roles'];
+    protected $fillable = ['name', 'type', 'label', 'visible_to_roles', 'computed', 'formula'];
+
+    protected $casts = [
+        'computed' => 'boolean',
+    ];
 
     public function entity()
     {

@@ -23,8 +23,7 @@
     @if (session('success'))
         <div class="alert alert-success" id="success-alert">
             {{ session('success') }}
-            <button type="button" class="alert-close"
-                onclick="this.parentElement.classList.add('hidden')">×</button>
+            <button type="button" class="alert-close" onclick="this.parentElement.classList.add('hidden')">×</button>
         </div>
     @endif
 
@@ -37,14 +36,12 @@
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <button type="button" class="alert-close"
-                onclick="this.parentElement.classList.add('hidden')">×</button>
+            <button type="button" class="alert-close" onclick="this.parentElement.classList.add('hidden')">×</button>
         </div>
     @elseif (session('error'))
         <div class="alert alert-danger" id="error-alert">
             {{ session('error') }}
-            <button type="button" class="alert-close"
-                onclick="this.parentElement.classList.add('hidden')">×</button>
+            <button type="button" class="alert-close" onclick="this.parentElement.classList.add('hidden')">×</button>
         </div>
     @endif
     <div class="wizard-form">
@@ -140,20 +137,48 @@
                             <input type="text" name="crud_fields[{{ $index }}][label]"
                                 value="{{ old("crud_fields.$index.label", $field->label) }}" placeholder="Label"
                                 required>
+
+                            <!-- Add Computed Checkbox -->
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="crud_fields[{{ $index }}][computed]"
+                                        value="1"
+                                        {{ old("crud_fields.$index.computed", $field->computed ?? false) ? 'checked' : '' }}
+                                        onchange="toggleFormulaInput(this)">
+                                    Computed Field
+                                </label>
+                            </div>
+
+                            <!-- Add Formula Input (hidden by default, shown when computed is checked) -->
+                            <div class="form-group"
+                                style="display: {{ old("crud_fields.$index.computed", $field->computed ?? false) ? 'block' : 'none' }}">
+                                <label>Formula</label>
+                                <input type="text" name="crud_fields[{{ $index }}][formula]"
+                                    value="{{ old("crud_fields.$index.formula", $field->formula ?? '') }}"
+                                    placeholder="e.g., field1 + field2 * 2"
+                                    {{ old("crud_fields.$index.computed", $field->computed ?? false) ? 'required' : '' }}>
+                            </div>
+
                             <div class="custom-dropdown">
-                                <div class="dropdown-display" data-index="{{ $index }}">{{ $field->visible_to_roles ?: 'Select Roles' }}</div>
+                                <div class="dropdown-display" data-index="{{ $index }}">
+                                    {{ $field->visible_to_roles ?: 'Select Roles' }}</div>
                                 <div class="dropdown-options">
                                     @foreach (App\Models\Role::all() as $role)
-                                        <div class="dropdown-option" data-value="{{ $role->name }}">{{ ucfirst($role->name) }}</div>
+                                        <div class="dropdown-option" data-value="{{ $role->name }}">
+                                            {{ ucfirst($role->name) }}</div>
                                     @endforeach
                                 </div>
-                                <input type="hidden" name="crud_fields[{{ $index }}][visible_to_roles]" class="roles-input" value="{{ $field->visible_to_roles ?? 'admin' }}">
+                                <input type="hidden" name="crud_fields[{{ $index }}][visible_to_roles]"
+                                    class="roles-input" value="{{ $field->visible_to_roles ?? 'admin' }}">
                                 <select class="hidden-select" multiple>
                                     @php
-                                        $selectedRoles = $field->visible_to_roles ? explode(',', $field->visible_to_roles) : ['admin'];
+                                        $selectedRoles = $field->visible_to_roles
+                                            ? explode(',', $field->visible_to_roles)
+                                            : ['admin'];
                                     @endphp
                                     @foreach (App\Models\Role::all() as $role)
-                                        <option value="{{ $role->name }}" {{ in_array($role->name, $selectedRoles) ? 'selected' : '' }}>
+                                        <option value="{{ $role->name }}"
+                                            {{ in_array($role->name, $selectedRoles) ? 'selected' : '' }}>
                                             {{ ucfirst($role->name) }}
                                         </option>
                                     @endforeach
@@ -167,39 +192,78 @@
                             placeholder="Name" required oninput="updateFieldDropdowns()">
                         <select name="crud_fields[0][type]" required>
                             <option value="">Select Type</option>
-                            <option value="text" {{ old('crud_fields.0.type') === 'text' ? 'selected' : '' }}>Text</option>
-                            <option value="number" {{ old('crud_fields.0.type') === 'number' ? 'selected' : '' }}>Number</option>
-                            <option value="email" {{ old('crud_fields.0.type') === 'email' ? 'selected' : '' }}>Email</option>
-                            <option value="password" {{ old('crud_fields.0.type') === 'password' ? 'selected' : '' }}>Password</option>
-                            <option value="date" {{ old('crud_fields.0.type') === 'date' ? 'selected' : '' }}>Date</option>
-                            <option value="datetime-local" {{ old('crud_fields.0.type') === 'datetime-local' ? 'selected' : '' }}>DateTime-Local</option>
-                            <option value="time" {{ old('crud_fields.0.type') === 'time' ? 'selected' : '' }}>Time</option>
-                            <option value="checkbox" {{ old('crud_fields.0.type') === 'checkbox' ? 'selected' : '' }}>Checkbox</option>
-                            <option value="radio" {{ old('crud_fields.0.type') === 'radio' ? 'selected' : '' }}>Radio</option>
-                            <option value="file" {{ old('crud_fields.0.type') === 'file' ? 'selected' : '' }}>File</option>
-                            <option value="hidden" {{ old('crud_fields.0.type') === 'hidden' ? 'selected' : '' }}>Hidden</option>
-                            <option value="color" {{ old('crud_fields.0.type') === 'color' ? 'selected' : '' }}>Color</option>
-                            <option value="range" {{ old('crud_fields.0.type') === 'range' ? 'selected' : '' }}>Range</option>
-                            <option value="tel" {{ old('crud_fields.0.type') === 'tel' ? 'selected' : '' }}>Telephone</option>
-                            <option value="url" {{ old('crud_fields.0.type') === 'url' ? 'selected' : '' }}>URL</option>
+                            <option value="text" {{ old('crud_fields.0.type') === 'text' ? 'selected' : '' }}>Text
+                            </option>
+                            <option value="number" {{ old('crud_fields.0.type') === 'number' ? 'selected' : '' }}>
+                                Number</option>
+                            <option value="email" {{ old('crud_fields.0.type') === 'email' ? 'selected' : '' }}>Email
+                            </option>
+                            <option value="password" {{ old('crud_fields.0.type') === 'password' ? 'selected' : '' }}>
+                                Password</option>
+                            <option value="date" {{ old('crud_fields.0.type') === 'date' ? 'selected' : '' }}>Date
+                            </option>
+                            <option value="datetime-local"
+                                {{ old('crud_fields.0.type') === 'datetime-local' ? 'selected' : '' }}>DateTime-Local
+                            </option>
+                            <option value="time" {{ old('crud_fields.0.type') === 'time' ? 'selected' : '' }}>Time
+                            </option>
+                            <option value="checkbox" {{ old('crud_fields.0.type') === 'checkbox' ? 'selected' : '' }}>
+                                Checkbox</option>
+                            <option value="radio" {{ old('crud_fields.0.type') === 'radio' ? 'selected' : '' }}>Radio
+                            </option>
+                            <option value="file" {{ old('crud_fields.0.type') === 'file' ? 'selected' : '' }}>File
+                            </option>
+                            <option value="hidden" {{ old('crud_fields.0.type') === 'hidden' ? 'selected' : '' }}>
+                                Hidden</option>
+                            <option value="color" {{ old('crud_fields.0.type') === 'color' ? 'selected' : '' }}>Color
+                            </option>
+                            <option value="range" {{ old('crud_fields.0.type') === 'range' ? 'selected' : '' }}>Range
+                            </option>
+                            <option value="tel" {{ old('crud_fields.0.type') === 'tel' ? 'selected' : '' }}>
+                                Telephone</option>
+                            <option value="url" {{ old('crud_fields.0.type') === 'url' ? 'selected' : '' }}>URL
+                            </option>
                         </select>
                         <input type="text" name="crud_fields[0][label]" value="{{ old('crud_fields.0.label') }}"
                             placeholder="Label" required>
+
+                        <!-- Add Computed Checkbox -->
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="crud_fields[0][computed]" value="1"
+                                    {{ old('crud_fields.0.computed') ? 'checked' : '' }}
+                                    onchange="toggleFormulaInput(this)">
+                                Computed Field
+                            </label>
+                        </div>
+
+                        <!-- Add Formula Input -->
+                        <div class="form-group"
+                            style="display: {{ old('crud_fields.0.computed') ? 'block' : 'none' }}">
+                            <label>Formula</label>
+                            <input type="text" name="crud_fields[0][formula]"
+                                value="{{ old('crud_fields.0.formula') }}" placeholder="e.g., field1 + field2 * 2"
+                                {{ old('crud_fields.0.computed') ? 'required' : '' }}>
+                        </div>
+
                         <div class="custom-dropdown">
                             <div class="dropdown-display" data-index="0">Select Roles</div>
                             <div class="dropdown-options">
                                 @foreach (App\Models\Role::all() as $role)
-                                    <div class="dropdown-option" data-value="{{ $role->name }}">{{ ucfirst($role->name) }}</div>
+                                    <div class="dropdown-option" data-value="{{ $role->name }}">
+                                        {{ ucfirst($role->name) }}</div>
                                 @endforeach
                             </div>
-                            <input type="hidden" name="crud_fields[0][visible_to_roles]" class="roles-input" value="{{ old('crud_fields.0.visible_to_roles', 'admin') }}">
+                            <input type="hidden" name="crud_fields[0][visible_to_roles]" class="roles-input"
+                                value="{{ old('crud_fields.0.visible_to_roles', 'admin') }}">
                             <select class="hidden-select" multiple>
                                 @php
                                     $selectedRoles = old('crud_fields.0.visible_to_roles', 'admin');
                                     $selectedRolesArray = explode(',', $selectedRoles);
                                 @endphp
                                 @foreach (App\Models\Role::all() as $role)
-                                    <option value="{{ $role->name }}" {{ in_array($role->name, $selectedRolesArray) ? 'selected' : '' }}>
+                                    <option value="{{ $role->name }}"
+                                        {{ in_array($role->name, $selectedRolesArray) ? 'selected' : '' }}>
                                         {{ ucfirst($role->name) }}
                                     </option>
                                 @endforeach
@@ -231,47 +295,85 @@
                                     @php
                                         $ruleParts = explode(':', $validation->rule);
                                         $ruleBase = $ruleParts[0];
-                                        $ruleParam = isset($ruleParts[1]) ? implode(':', array_slice($ruleParts, 1)) : '';
+                                        $ruleParam = isset($ruleParts[1])
+                                            ? implode(':', array_slice($ruleParts, 1))
+                                            : '';
                                     @endphp
-                                    <option value="required" {{ $ruleBase === 'required' ? 'selected' : '' }}>Required</option>
-                                    <option value="string" {{ $ruleBase === 'string' ? 'selected' : '' }}>String</option>
-                                    <option value="integer" {{ $ruleBase === 'integer' ? 'selected' : '' }}>Integer</option>
-                                    <option value="numeric" {{ $ruleBase === 'numeric' ? 'selected' : '' }}>Numeric</option>
-                                    <option value="email" {{ $ruleBase === 'email' ? 'selected' : '' }}>Email</option>
+                                    <option value="required" {{ $ruleBase === 'required' ? 'selected' : '' }}>Required
+                                    </option>
+                                    <option value="string" {{ $ruleBase === 'string' ? 'selected' : '' }}>String
+                                    </option>
+                                    <option value="integer" {{ $ruleBase === 'integer' ? 'selected' : '' }}>Integer
+                                    </option>
+                                    <option value="numeric" {{ $ruleBase === 'numeric' ? 'selected' : '' }}>Numeric
+                                    </option>
+                                    <option value="email" {{ $ruleBase === 'email' ? 'selected' : '' }}>Email
+                                    </option>
                                     <option value="url" {{ $ruleBase === 'url' ? 'selected' : '' }}>URL</option>
-                                    <option value="boolean" {{ $ruleBase === 'boolean' ? 'selected' : '' }}>Boolean</option>
+                                    <option value="boolean" {{ $ruleBase === 'boolean' ? 'selected' : '' }}>Boolean
+                                    </option>
                                     <option value="date" {{ $ruleBase === 'date' ? 'selected' : '' }}>Date</option>
-                                    <option value="min:" {{ $ruleBase === 'min' ? 'selected' : '' }}>Min (e.g., min:5)</option>
-                                    <option value="max:" {{ $ruleBase === 'max' ? 'selected' : '' }}>Max (e.g., max:255)</option>
-                                    <option value="size:" {{ $ruleBase === 'size' ? 'selected' : '' }}>Size (e.g., size:10)</option>
-                                    <option value="unique:" {{ $ruleBase === 'unique' ? 'selected' : '' }}>Unique (e.g., unique:crud_entities,name)</option>
-                                    <option value="exists:" {{ $ruleBase === 'exists' ? 'selected' : '' }}>Exists (e.g., exists:crud_entities,id)</option>
-                                    <option value="in:" {{ $ruleBase === 'in' ? 'selected' : '' }}>In (e.g., in:1,2,3)</option>
-                                    <option value="not_in:" {{ $ruleBase === 'not_in' ? 'selected' : '' }}>Not In (e.g., not_in:1,2,3)</option>
-                                    <option value="regex:" {{ $ruleBase === 'regex' ? 'selected' : '' }}>Regex (e.g., regex:/^[a-z]+$/)</option>
-                                    <option value="alpha" {{ $ruleBase === 'alpha' ? 'selected' : '' }}>Alpha</option>
-                                    <option value="alpha_num" {{ $ruleBase === 'alpha_num' ? 'selected' : '' }}>Alpha Numeric</option>
-                                    <option value="alpha_dash" {{ $ruleBase === 'alpha_dash' ? 'selected' : '' }}>Alpha Dash</option>
-                                    <option value="distinct" {{ $ruleBase === 'distinct' ? 'selected' : '' }}>Distinct</option>
-                                    <option value="nullable" {{ $ruleBase === 'nullable' ? 'selected' : '' }}>Nullable</option>
-                                    <option value="sometimes" {{ $ruleBase === 'sometimes' ? 'selected' : '' }}>Sometimes</option>
-                                    <option value="required_if:" {{ $ruleBase === 'required_if' ? 'selected' : '' }}>Required If</option>
-                                    <option value="required_unless:" {{ $ruleBase === 'required_unless' ? 'selected' : '' }}>Required Unless</option>
-                                    <option value="required_with:" {{ $ruleBase === 'required_with' ? 'selected' : '' }}>Required With</option>
-                                    <option value="required_without:" {{ $ruleBase === 'required_without' ? 'selected' : '' }}>Required Without</option>
+                                    <option value="min:" {{ $ruleBase === 'min' ? 'selected' : '' }}>Min (e.g.,
+                                        min:5)</option>
+                                    <option value="max:" {{ $ruleBase === 'max' ? 'selected' : '' }}>Max (e.g.,
+                                        max:255)</option>
+                                    <option value="size:" {{ $ruleBase === 'size' ? 'selected' : '' }}>Size (e.g.,
+                                        size:10)</option>
+                                    <option value="unique:" {{ $ruleBase === 'unique' ? 'selected' : '' }}>Unique
+                                        (e.g., unique:crud_entities,name)
+                                    </option>
+                                    <option value="exists:" {{ $ruleBase === 'exists' ? 'selected' : '' }}>Exists
+                                        (e.g., exists:crud_entities,id)</option>
+                                    <option value="in:" {{ $ruleBase === 'in' ? 'selected' : '' }}>In (e.g.,
+                                        in:1,2,3)</option>
+                                    <option value="not_in:" {{ $ruleBase === 'not_in' ? 'selected' : '' }}>Not In
+                                        (e.g., not_in:1,2,3)</option>
+                                    <option value="regex:" {{ $ruleBase === 'regex' ? 'selected' : '' }}>Regex (e.g.,
+                                        regex:/^[a-z]+$/)</option>
+                                    <option value="alpha" {{ $ruleBase === 'alpha' ? 'selected' : '' }}>Alpha
+                                    </option>
+                                    <option value="alpha_num" {{ $ruleBase === 'alpha_num' ? 'selected' : '' }}>Alpha
+                                        Numeric</option>
+                                    <option value="alpha_dash" {{ $ruleBase === 'alpha_dash' ? 'selected' : '' }}>
+                                        Alpha Dash</option>
+                                    <option value="distinct" {{ $ruleBase === 'distinct' ? 'selected' : '' }}>
+                                        Distinct
+                                    </option>
+                                    <option value="nullable" {{ $ruleBase === 'nullable' ? 'selected' : '' }}>
+                                        Nullable
+                                    </option>
+                                    <option value="sometimes" {{ $ruleBase === 'sometimes' ? 'selected' : '' }}>
+                                        Sometimes</option>
+                                    <option value="required_if:" {{ $ruleBase === 'required_if' ? 'selected' : '' }}>
+                                        Required If</option>
+                                    <option value="required_unless:"
+                                        {{ $ruleBase === 'required_unless' ? 'selected' : '' }}>Required Unless
+                                    </option>
+                                    <option value="required_with:"
+                                        {{ $ruleBase === 'required_with' ? 'selected' : '' }}>Required With</option>
+                                    <option value="required_without:"
+                                        {{ $ruleBase === 'required_without' ? 'selected' : '' }}>Required Without
+                                    </option>
                                     <option value="same:" {{ $ruleBase === 'same' ? 'selected' : '' }}>Same</option>
-                                    <option value="different:" {{ $ruleBase === 'different' ? 'selected' : '' }}>Different</option>
-                                    <option value="confirmed" {{ $ruleBase === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                    <option value="array" {{ $ruleBase === 'array' ? 'selected' : '' }}>Array</option>
+                                    <option value="different:" {{ $ruleBase === 'different' ? 'selected' : '' }}>
+                                        Different</option>
+                                    <option value="confirmed" {{ $ruleBase === 'confirmed' ? 'selected' : '' }}>
+                                        Confirmed</option>
+                                    <option value="array" {{ $ruleBase === 'array' ? 'selected' : '' }}>Array
+                                    </option>
                                     <option value="json" {{ $ruleBase === 'json' ? 'selected' : '' }}>JSON</option>
-                                    <option value="ip" {{ $ruleBase === 'ip' ? 'selected' : '' }}>IP Address</option>
+                                    <option value="ip" {{ $ruleBase === 'ip' ? 'selected' : '' }}>IP Address
+                                    </option>
                                     <option value="ipv4" {{ $ruleBase === 'ipv4' ? 'selected' : '' }}>IPv4</option>
                                     <option value="ipv6" {{ $ruleBase === 'ipv6' ? 'selected' : '' }}>IPv6</option>
                                     <option value="uuid" {{ $ruleBase === 'uuid' ? 'selected' : '' }}>UUID</option>
                                     <option value="file" {{ $ruleBase === 'file' ? 'selected' : '' }}>File</option>
-                                    <option value="image" {{ $ruleBase === 'image' ? 'selected' : '' }}>Image</option>
-                                    <option value="mimes:" {{ $ruleBase === 'mimes' ? 'selected' : '' }}>Mimes</option>
-                                    <option value="mimetypes:" {{ $ruleBase === 'mimetypes' ? 'selected' : '' }}>Mime Types</option>
+                                    <option value="image" {{ $ruleBase === 'image' ? 'selected' : '' }}>Image
+                                    </option>
+                                    <option value="mimes:" {{ $ruleBase === 'mimes' ? 'selected' : '' }}>Mimes
+                                    </option>
+                                    <option value="mimetypes:" {{ $ruleBase === 'mimetypes' ? 'selected' : '' }}>Mime
+                                        Types</option>
                                 </select>
                                 <input type="text" name="crud_validations[{{ $valIndex }}][rule_param]"
                                     value="{{ old("crud_validations.$valIndex.rule_param", $ruleParam) }}"
@@ -360,7 +462,8 @@
                 @if (isset($entity) && $entity->relationships->isNotEmpty())
                     @foreach ($entity->relationships as $index => $relationship)
                         <div class="relationship-group">
-                            <select name="crud_relationships[{{ $index }}][type]" onchange="toggleDisplayColumns(this)" required>
+                            <select name="crud_relationships[{{ $index }}][type]"
+                                onchange="toggleDisplayColumns(this)" required>
                                 <option value="">Select Relationship Type</option>
                                 <option value="belongsTo"
                                     {{ old("crud_relationships.$index.type", $relationship->type) === 'belongsTo' ? 'selected' : '' }}>
@@ -381,14 +484,17 @@
                             <input type="text" name="crud_relationships[{{ $index }}][local_key]"
                                 value="{{ old("crud_relationships.$index.local_key", $relationship->local_key ?? 'id') }}"
                                 placeholder="Local Key (default: id)">
-                            <div class="display-column-section" style="display: {{ $relationship->type === 'hasMany' ? 'none' : 'block' }};">
+                            <div class="display-column-section"
+                                style="display: {{ $relationship->type === 'hasMany' ? 'none' : 'block' }};">
                                 <input type="text" name="crud_relationships[{{ $index }}][display_column]"
                                     value="{{ old("crud_relationships.$index.display_column", $relationship->display_column ?? '') }}"
                                     placeholder="Display Column (e.g., name)">
                             </div>
-                            <div class="display-columns-section" style="display: {{ $relationship->type === 'hasMany' ? 'block' : 'none' }};">
+                            <div class="display-columns-section"
+                                style="display: {{ $relationship->type === 'hasMany' ? 'block' : 'none' }};">
                                 <label>Display Columns (comma-separated for hasMany)</label>
-                                <input type="text" name="crud_relationships[{{ $index }}][display_columns]"
+                                <input type="text"
+                                    name="crud_relationships[{{ $index }}][display_columns]"
                                     value="{{ old("crud_relationships.$index.display_columns", is_array($relationship->display_columns) ? implode(',', $relationship->display_columns) : $relationship->display_columns ?? '') }}"
                                     placeholder="e.g., payment_date, amount">
                             </div>
@@ -403,9 +509,11 @@
                             <option value="belongsToMany">Belongs To Many</option>
                         </select>
                         <input type="text" name="crud_relationships[0][related_table]"
-                            value="{{ old('crud_relationships.0.related_table') }}" placeholder="Related Table" required>
+                            value="{{ old('crud_relationships.0.related_table') }}" placeholder="Related Table"
+                            required>
                         <input type="text" name="crud_relationships[0][foreign_key]"
-                            value="{{ old('crud_relationships.0.foreign_key') }}" placeholder="Foreign Key" required>
+                            value="{{ old('crud_relationships.0.foreign_key') }}" placeholder="Foreign Key"
+                            required>
                         <input type="text" name="crud_relationships[0][local_key]"
                             value="{{ old('crud_relationships.0.local_key', 'id') }}"
                             placeholder="Local Key (default: id)">
@@ -433,15 +541,18 @@
                 <button type="button" onclick="exportToJson()" class="btn btn-add">Export JSON</button>
             </div>
 
-            <button type="submit" class="btn btn-primary">{{ isset($entity) ? 'Update' : 'Create' }} CRUD Entity</button>
+            <button type="submit" class="btn btn-primary">{{ isset($entity) ? 'Update' : 'Create' }} CRUD
+                Entity</button>
         </form>
     </div>
 
     <script>
         let fieldCount = {{ isset($entity) && $entity->fields->isNotEmpty() ? $entity->fields->count() : 1 }},
-            validationCount = {{ isset($entity) && $entity->fields->isNotEmpty() ? $entity->fields->sum(fn($field) => $field->validations->count()) : 1 }},
+            validationCount =
+            {{ isset($entity) && $entity->fields->isNotEmpty() ? $entity->fields->sum(fn($field) => $field->validations->count()) : 1 }},
             columnCount = {{ isset($entity) && $entity->columns->isNotEmpty() ? $entity->columns->count() : 1 }},
-            relationshipCount = {{ isset($entity) && $entity->relationships->isNotEmpty() ? $entity->relationships->count() : 1 }};
+            relationshipCount =
+            {{ isset($entity) && $entity->relationships->isNotEmpty() ? $entity->relationships->count() : 1 }};
 
         function updateFieldDropdowns() {
             const fields = document.querySelectorAll('.field-group input[name$="[name]"]');
@@ -502,6 +613,17 @@
                         <option value="url">URL</option>
                     </select>
                     <input type="text" name="crud_fields[${fieldCount}][label]" placeholder="Label" required>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="crud_fields[${fieldCount}][computed]" value="1" onchange="toggleFormulaInput(this)">
+                            Computed Field
+                        </label>
+                    </div>
+                    <div class="form-group" style="display: none;">
+                        <label>Formula</label>
+                        <input type="text" name="crud_fields[${fieldCount}][formula]" placeholder="e.g., field1 + field2 * 2">
+                    </div>
+
                     <div class="custom-dropdown">
                         <div class="dropdown-display" data-index="${fieldCount}">Select Roles</div>
                         <div class="dropdown-options">
@@ -634,44 +756,63 @@
             data.crud_fields.forEach(field => {
                 const visibleToRoles = field.visible_to_roles ? field.visible_to_roles.split(',') : ['admin'];
                 document.getElementById('crud-fields').innerHTML += `
-                    <div class="field-group">
-                        <input type="text" name="crud_fields[${fieldCount}][name]" value="${field.name}" required oninput="updateFieldDropdowns()">
-                        <select name="crud_fields[${fieldCount}][type]" required>
-                            <option value="">Select Type</option>
-                            <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
-                            <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
-                            <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
-                            <option value="password" ${field.type === 'password' ? 'selected' : ''}>Password</option>
-                            <option value="date" ${field.type === 'date' ? 'selected' : ''}>Date</option>
-                            <option value="datetime-local" ${field.type === 'datetime-local' ? 'selected' : ''}>DateTime-Local</option>
-                            <option value="time" ${field.type === 'time' ? 'selected' : ''}>Time</option>
-                            <option value="checkbox" ${field.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
-                            <option value="radio" ${field.type === 'radio' ? 'selected' : ''}>Radio</option>
-                            <option value="file" ${field.type === 'file' ? 'selected' : ''}>File</option>
-                            <option value="hidden" ${field.type === 'hidden' ? 'selected' : ''}>Hidden</option>
-                            <option value="color" ${field.type === 'color' ? 'selected' : ''}>Color</option>
-                            <option value="range" ${field.type === 'range' ? 'selected' : ''}>Range</option>
-                            <option value="tel" ${field.type === 'tel' ? 'selected' : ''}>Telephone</option>
-                            <option value="url" ${field.type === 'url' ? 'selected' : ''}>URL</option>
-                        </select>
-                        <input type="text" name="crud_fields[${fieldCount}][label]" value="${field.label}" required>
-                        <div class="custom-dropdown">
-                            <div class="dropdown-display" data-index="${fieldCount}">${visibleToRoles.join(', ') || 'Select Roles'}</div>
-                            <div class="dropdown-options">
-                                @foreach (App\Models\Role::all() as $role)
-                                    <div class="dropdown-option" data-value="{{ $role->name }}">{{ ucfirst($role->name) }}</div>
-                                @endforeach
-                            </div>
-                            <input type="hidden" name="crud_fields[${fieldCount}][visible_to_roles]" class="roles-input" value="${visibleToRoles.join(',')}">
-                            <select class="hidden-select" multiple>
-                                @foreach (App\Models\Role::all() as $role)
-                                    <option value="{{ $role->name }}" ${visibleToRoles.includes("{{ $role->name }}") ? 'selected' : ''}>
-                                        {{ ucfirst($role->name) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>`;
+            <div class="field-group">
+                <input type="text" name="crud_fields[${fieldCount}][name]" value="${field.name}" required oninput="updateFieldDropdowns()">
+                <select name="crud_fields[${fieldCount}][type]" required>
+                    <option value="">Select Type</option>
+                    <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                    <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                    <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
+                    <option value="password" ${field.type === 'password' ? 'selected' : ''}>Password</option>
+                    <option value="date" ${field.type === 'date' ? 'selected' : ''}>Date</option>
+                    <option value="datetime-local" ${field.type === 'datetime-local' ? 'selected' : ''}>DateTime-Local</option>
+                    <option value="time" ${field.type === 'time' ? 'selected' : ''}>Time</option>
+                    <option value="checkbox" ${field.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
+                    <option value="radio" ${field.type === 'radio' ? 'selected' : ''}>Radio</option>
+                    <option value="file" ${field.type === 'file' ? 'selected' : ''}>File</option>
+                    <option value="hidden" ${field.type === 'hidden' ? 'selected' : ''}>Hidden</option>
+                    <option value="color" ${field.type === 'color' ? 'selected' : ''}>Color</option>
+                    <option value="range" ${field.type === 'range' ? 'selected' : ''}>Range</option>
+                    <option value="tel" ${field.type === 'tel' ? 'selected' : ''}>Telephone</option>
+                    <option value="url" ${field.type === 'url' ? 'selected' : ''}>URL</option>
+                </select>
+                <input type="text" name="crud_fields[${fieldCount}][label]" value="${field.label}" required>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox"
+                               name="crud_fields[${fieldCount}][computed]"
+                               value="1"
+                               ${field.computed ? 'checked' : ''}
+                               onchange="toggleFormulaInput(this)">
+                        Computed Field
+                    </label>
+                </div>
+                <div class="form-group"
+                     style="display: ${field.computed ? 'block' : 'none'};">
+                    <label>Formula</label>
+                    <input type="text"
+                           name="crud_fields[${fieldCount}][formula]"
+                           value="${field.formula || ''}"
+                           placeholder="e.g., field1 + field2 * 2"
+                           ${field.computed ? 'required' : ''}>
+                </div>
+                <div class="custom-dropdown">
+                    <div class="dropdown-display" data-index="${fieldCount}">${visibleToRoles.join(', ') || 'Select Roles'}</div>
+                    <div class="dropdown-options">
+                        @foreach (App\Models\Role::all() as $role)
+                            <div class="dropdown-option" data-value="{{ $role->name }}">{{ ucfirst($role->name) }}</div>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="crud_fields[${fieldCount}][visible_to_roles]" class="roles-input" value="${visibleToRoles.join(',')}">
+                    <select class="hidden-select" multiple>
+                        @foreach (App\Models\Role::all() as $role)
+                            <option value="{{ $role->name }}" ${visibleToRoles.includes("{{ $role->name }}") ? 'selected' : ''}>
+                                {{ ucfirst($role->name) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>`;
                 fieldCount++;
             });
             initializeDropdowns();
@@ -683,57 +824,57 @@
                 const [ruleBase, ...ruleParamParts] = validation.rule.split(':');
                 const ruleParam = ruleParamParts.join(':') || '';
                 document.getElementById('crud-validations').innerHTML += `
-                    <div class="validation-group">
-                        <select name="crud_validations[${validationCount}][field_index]" required>
-                            <option value="">Select Field</option>
-                            ${data.crud_fields.map((field, index) =>
-                                `<option value="${index}" ${index === validation.field_index ? 'selected' : ''}>${field.name}</option>`
-                            ).join('')}
-                        </select>
-                        <select name="crud_validations[${validationCount}][rule_base]" onchange="toggleParameterInput(this)" required>
-                            <option value="">Select Rule</option>
-                            <option value="required" ${ruleBase === 'required' ? 'selected' : ''}>Required</option>
-                            <option value="string" ${ruleBase === 'string' ? 'selected' : ''}>String</option>
-                            <option value="integer" ${ruleBase === 'integer' ? 'selected' : ''}>Integer</option>
-                            <option value="numeric" ${ruleBase === 'numeric' ? 'selected' : ''}>Numeric</option>
-                            <option value="email" ${ruleBase === 'email' ? 'selected' : ''}>Email</option>
-                            <option value="url" ${ruleBase === 'url' ? 'selected' : ''}>URL</option>
-                            <option value="boolean" ${ruleBase === 'boolean' ? 'selected' : ''}>Boolean</option>
-                            <option value="date" ${ruleBase === 'date' ? 'selected' : ''}>Date</option>
-                            <option value="min:" ${ruleBase === 'min' ? 'selected' : ''}>Min (e.g., min:5)</option>
-                            <option value="max:" ${ruleBase === 'max' ? 'selected' : ''}>Max (e.g., max:255)</option>
-                            <option value="size:" ${ruleBase === 'size' ? 'selected' : ''}>Size (e.g., size:10)</option>
-                            <option value="unique:" ${ruleBase === 'unique' ? 'selected' : ''}>Unique (e.g., unique:crud_entities,name)</option>
-                            <option value="exists:" ${ruleBase === 'exists' ? 'selected' : ''}>Exists (e.g., exists:crud_entities,id)</option>
-                            <option value="in:" ${ruleBase === 'in' ? 'selected' : ''}>In (e.g., in:1,2,3)</option>
-                            <option value="not_in:" ${ruleBase === 'not_in' ? 'selected' : ''}>Not In (e.g., not_in:1,2,3)</option>
-                            <option value="regex:" ${ruleBase === 'regex' ? 'selected' : ''}>Regex (e.g., regex:/^[a-z]+$/)</option>
-                            <option value="alpha" ${ruleBase === 'alpha' ? 'selected' : ''}>Alpha</option>
-                            <option value="alpha_num" ${ruleBase === 'alpha_num' ? 'selected' : ''}>Alpha Numeric</option>
-                            <option value="alpha_dash" ${ruleBase === 'alpha_dash' ? 'selected' : ''}>Alpha Dash</option>
-                            <option value="distinct" ${ruleBase === 'distinct' ? 'selected' : ''}>Distinct</option>
-                            <option value="nullable" ${ruleBase === 'nullable' ? 'selected' : ''}>Nullable</option>
-                            <option value="sometimes" ${ruleBase === 'sometimes' ? 'selected' : ''}>Sometimes</option>
-                            <option value="required_if:" ${ruleBase === 'required_if' ? 'selected' : ''}>Required If</option>
-                            <option value="required_unless:" ${ruleBase === 'required_unless' ? 'selected' : ''}>Required Unless</option>
-                            <option value="required_with:" ${ruleBase === 'required_with' ? 'selected' : ''}>Required With</option>
-                            <option value="required_without:" ${ruleBase === 'required_without' ? 'selected' : ''}>Required Without</option>
-                            <option value="same:" ${ruleBase === 'same' ? 'selected' : ''}>Same</option>
-                            <option value="different:" ${ruleBase === 'different' ? 'selected' : ''}>Different</option>
-                            <option value="confirmed" ${ruleBase === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                            <option value="array" ${ruleBase === 'array' ? 'selected' : ''}>Array</option>
-                            <option value="json" ${ruleBase === 'json' ? 'selected' : ''}>JSON</option>
-                            <option value="ip" ${ruleBase === 'ip' ? 'selected' : ''}>IP Address</option>
-                            <option value="ipv4" ${ruleBase === 'ipv4' ? 'selected' : ''}>IPv4</option>
-                            <option value="ipv6" ${ruleBase === 'ipv6' ? 'selected' : ''}>IPv6</option>
-                            <option value="uuid" ${ruleBase === 'uuid' ? 'selected' : ''}>UUID</option>
-                            <option value="file" ${ruleBase === 'file' ? 'selected' : ''}>File</option>
-                            <option value="image" ${ruleBase === 'image' ? 'selected' : ''}>Image</option>
-                            <option value="mimes:" ${ruleBase === 'mimes' ? 'selected' : ''}>Mimes</option>
-                            <option value="mimetypes:" ${ruleBase === 'mimetypes' ? 'selected' : ''}>Mime Types</option>
-                        </select>
-                        <input type="text" name="crud_validations[${validationCount}][rule_param]" value="${ruleParam}" placeholder="Parameter" style="display: ${ruleParam ? 'inline-block' : 'none'};">
-                    </div>`;
+            <div class="validation-group">
+                <select name="crud_validations[${validationCount}][field_index]" required>
+                    <option value="">Select Field</option>
+                    ${data.crud_fields.map((field, index) =>
+                        `<option value="${index}" ${index === validation.field_index ? 'selected' : ''}>${field.name}</option>`
+                    ).join('')}
+                </select>
+                <select name="crud_validations[${validationCount}][rule_base]" onchange="toggleParameterInput(this)" required>
+                    <option value="">Select Rule</option>
+                    <option value="required" ${ruleBase === 'required' ? 'selected' : ''}>Required</option>
+                    <option value="string" ${ruleBase === 'string' ? 'selected' : ''}>String</option>
+                    <option value="integer" ${ruleBase === 'integer' ? 'selected' : ''}>Integer</option>
+                    <option value="numeric" ${ruleBase === 'numeric' ? 'selected' : ''}>Numeric</option>
+                    <option value="email" ${ruleBase === 'email' ? 'selected' : ''}>Email</option>
+                    <option value="url" ${ruleBase === 'url' ? 'selected' : ''}>URL</option>
+                    <option value="boolean" ${ruleBase === 'boolean' ? 'selected' : ''}>Boolean</option>
+                    <option value="date" ${ruleBase === 'date' ? 'selected' : ''}>Date</option>
+                    <option value="min:" ${ruleBase === 'min' ? 'selected' : ''}>Min (e.g., min:5)</option>
+                    <option value="max:" ${ruleBase === 'max' ? 'selected' : ''}>Max (e.g., max:255)</option>
+                    <option value="size:" ${ruleBase === 'size' ? 'selected' : ''}>Size (e.g., size:10)</option>
+                    <option value="unique:" ${ruleBase === 'unique' ? 'selected' : ''}>Unique (e.g., unique:crud_entities,name)</option>
+                    <option value="exists:" ${ruleBase === 'exists' ? 'selected' : ''}>Exists (e.g., exists:crud_entities,id)</option>
+                    <option value="in:" ${ruleBase === 'in' ? 'selected' : ''}>In (e.g., in:1,2,3)</option>
+                    <option value="not_in:" ${ruleBase === 'not_in' ? 'selected' : ''}>Not In (e.g., not_in:1,2,3)</option>
+                    <option value="regex:" ${ruleBase === 'regex' ? 'selected' : ''}>Regex (e.g., regex:/^[a-z]+$/)</option>
+                    <option value="alpha" ${ruleBase === 'alpha' ? 'selected' : ''}>Alpha</option>
+                    <option value="alpha_num" ${ruleBase === 'alpha_num' ? 'selected' : ''}>Alpha Numeric</option>
+                    <option value="alpha_dash" ${ruleBase === 'alpha_dash' ? 'selected' : ''}>Alpha Dash</option>
+                    <option value="distinct" ${ruleBase === 'distinct' ? 'selected' : ''}>Distinct</option>
+                    <option value="nullable" ${ruleBase === 'nullable' ? 'selected' : ''}>Nullable</option>
+                    <option value="sometimes" ${ruleBase === 'sometimes' ? 'selected' : ''}>Sometimes</option>
+                    <option value="required_if:" ${ruleBase === 'required_if' ? 'selected' : ''}>Required If</option>
+                    <option value="required_unless:" ${ruleBase === 'required_unless' ? 'selected' : ''}>Required Unless</option>
+                    <option value="required_with:" ${ruleBase === 'required_with' ? 'selected' : ''}>Required With</option>
+                    <option value="required_without:" ${ruleBase === 'required_without' ? 'selected' : ''}>Required Without</option>
+                    <option value="same:" ${ruleBase === 'same' ? 'selected' : ''}>Same</option>
+                    <option value="different:" ${ruleBase === 'different' ? 'selected' : ''}>Different</option>
+                    <option value="confirmed" ${ruleBase === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                    <option value="array" ${ruleBase === 'array' ? 'selected' : ''}>Array</option>
+                    <option value="json" ${ruleBase === 'json' ? 'selected' : ''}>JSON</option>
+                    <option value="ip" ${ruleBase === 'ip' ? 'selected' : ''}>IP Address</option>
+                    <option value="ipv4" ${ruleBase === 'ipv4' ? 'selected' : ''}>IPv4</option>
+                    <option value="ipv6" ${ruleBase === 'ipv6' ? 'selected' : ''}>IPv6</option>
+                    <option value="uuid" ${ruleBase === 'uuid' ? 'selected' : ''}>UUID</option>
+                    <option value="file" ${ruleBase === 'file' ? 'selected' : ''}>File</option>
+                    <option value="image" ${ruleBase === 'image' ? 'selected' : ''}>Image</option>
+                    <option value="mimes:" ${ruleBase === 'mimes' ? 'selected' : ''}>Mimes</option>
+                    <option value="mimetypes:" ${ruleBase === 'mimetypes' ? 'selected' : ''}>Mime Types</option>
+                </select>
+                <input type="text" name="crud_validations[${validationCount}][rule_param]" value="${ruleParam}" placeholder="Parameter" style="display: ${ruleParam ? 'inline-block' : 'none'};">
+            </div>`;
                 validationCount++;
             });
             updateFieldDropdowns();
@@ -743,35 +884,36 @@
             columnCount = 0;
             data.crud_columns.forEach(column => {
                 document.getElementById('crud-columns').innerHTML += `
-                    <div class="column-group">
-                        <input type="text" name="crud_columns[${columnCount}][field_name]" value="${column.field_name}" required>
-                    </div>`;
+            <div class="column-group">
+                <input type="text" name="crud_columns[${columnCount}][field_name]" value="${column.field_name}" required>
+            </div>`;
                 columnCount++;
             });
 
             document.getElementById('crud-relationships').innerHTML = '';
             relationshipCount = 0;
             (data.crud_relationships || []).forEach(relationship => {
-                const displayColumns = Array.isArray(relationship.display_columns) ? relationship.display_columns.join(',') : relationship.display_columns || '';
+                const displayColumns = Array.isArray(relationship.display_columns) ? relationship.display_columns
+                    .join(',') : relationship.display_columns || '';
                 document.getElementById('crud-relationships').innerHTML += `
-                    <div class="relationship-group">
-                        <select name="crud_relationships[${relationshipCount}][type]" onchange="toggleDisplayColumns(this)" required>
-                            <option value="">Select Relationship Type</option>
-                            <option value="belongsTo" ${relationship.type === 'belongsTo' ? 'selected' : ''}>Belongs To</option>
-                            <option value="hasMany" ${relationship.type === 'hasMany' ? 'selected' : ''}>Has Many</option>
-                            <option value="belongsToMany" ${relationship.type === 'belongsToMany' ? 'selected' : ''}>Belongs To Many</option>
-                        </select>
-                        <input type="text" name="crud_relationships[${relationshipCount}][related_table]" value="${relationship.related_table}" placeholder="Related Table" required>
-                        <input type="text" name="crud_relationships[${relationshipCount}][foreign_key]" value="${relationship.foreign_key}" placeholder="Foreign Key" required>
-                        <input type="text" name="crud_relationships[${relationshipCount}][local_key]" value="${relationship.local_key || 'id'}" placeholder="Local Key (default: id)">
-                        <div class="display-column-section" style="display: ${relationship.type === 'hasMany' ? 'none' : 'block'};">
-                            <input type="text" name="crud_relationships[${relationshipCount}][display_column]" value="${relationship.display_column || ''}" placeholder="Display Column (e.g., name)">
-                        </div>
-                        <div class="display-columns-section" style="display: ${relationship.type === 'hasMany' ? 'block' : 'none'};">
-                            <label>Display Columns (comma-separated for hasMany)</label>
-                            <input type="text" name="crud_relationships[${relationshipCount}][display_columns]" value="${displayColumns}" placeholder="e.g., payment_date, amount">
-                        </div>
-                    </div>`;
+            <div class="relationship-group">
+                <select name="crud_relationships[${relationshipCount}][type]" onchange="toggleDisplayColumns(this)" required>
+                    <option value="">Select Relationship Type</option>
+                    <option value="belongsTo" ${relationship.type === 'belongsTo' ? 'selected' : ''}>Belongs To</option>
+                    <option value="hasMany" ${relationship.type === 'hasMany' ? 'selected' : ''}>Has Many</option>
+                    <option value="belongsToMany" ${relationship.type === 'belongsToMany' ? 'selected' : ''}>Belongs To Many</option>
+                </select>
+                <input type="text" name="crud_relationships[${relationshipCount}][related_table]" value="${relationship.related_table}" placeholder="Related Table" required>
+                <input type="text" name="crud_relationships[${relationshipCount}][foreign_key]" value="${relationship.foreign_key}" placeholder="Foreign Key" required>
+                <input type="text" name="crud_relationships[${relationshipCount}][local_key]" value="${relationship.local_key || 'id'}" placeholder="Local Key (default: id)">
+                <div class="display-column-section" style="display: ${relationship.type === 'hasMany' ? 'none' : 'block'};">
+                    <input type="text" name="crud_relationships[${relationshipCount}][display_column]" value="${relationship.display_column || ''}" placeholder="Display Column (e.g., name)">
+                </div>
+                <div class="display-columns-section" style="display: ${relationship.type === 'hasMany' ? 'block' : 'none'};">
+                    <label>Display Columns (comma-separated for hasMany)</label>
+                    <input type="text" name="crud_relationships[${relationshipCount}][display_columns]" value="${displayColumns}" placeholder="e.g., payment_date, amount">
+                </div>
+            </div>`;
                 relationshipCount++;
             });
             document.querySelectorAll('select[name$="[type]"]').forEach(toggleDisplayColumns);
@@ -796,8 +938,14 @@
                     name: group.querySelector('input[name$="[name]"]').value,
                     type: group.querySelector('select[name$="[type]"]').value,
                     label: group.querySelector('input[name$="[label]"]').value,
+                    computed: group.querySelector('input[name$="[computed]"]').checked,
+                    formula: group.querySelector('input[name$="[formula]"]').value,
                     visible_to_roles: group.querySelector('input[name$="[visible_to_roles]"]').value
                 };
+                // Only include formula if computed is true
+                if (!field.computed) {
+                    delete field.formula;
+                }
                 data.crud_fields.push(field);
             });
 
@@ -828,15 +976,19 @@
                 };
                 if (type === 'hasMany') {
                     const displayColumns = group.querySelector('input[name$="[display_columns]"]').value;
-                    relationship.display_columns = displayColumns ? displayColumns.split(',').map(col => col.trim()) : [];
+                    relationship.display_columns = displayColumns ? displayColumns.split(',').map(col => col
+                    .trim()) : [];
                 } else {
-                    relationship.display_column = group.querySelector('input[name$="[display_column]"]').value || undefined;
+                    relationship.display_column = group.querySelector('input[name$="[display_column]"]').value ||
+                        undefined;
                 }
                 data.crud_relationships.push(relationship);
             });
 
             const jsonString = JSON.stringify(data, null, 4);
-            const blob = new Blob([jsonString], { type: 'application/json' });
+            const blob = new Blob([jsonString], {
+                type: 'application/json'
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -845,6 +997,20 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // Ensure this function is available (should already be in your code, but including it for completeness)
+        function toggleFormulaInput(checkbox) {
+            const formulaDiv = checkbox.closest('.field-group').querySelector('.form-group:nth-child(5)');
+            const formulaInput = formulaDiv.querySelector('input');
+
+            if (checkbox.checked) {
+                formulaDiv.style.display = 'block';
+                formulaInput.setAttribute('required', 'required');
+            } else {
+                formulaDiv.style.display = 'none';
+                formulaInput.removeAttribute('required');
+            }
         }
 
         function initializeDropdowns() {
@@ -867,11 +1033,13 @@
                     }
 
                     option.addEventListener('click', () => {
-                        const optionElement = Array.from(select.options).find(opt => opt.value === value);
+                        const optionElement = Array.from(select.options).find(opt => opt.value ===
+                            value);
                         optionElement.selected = !optionElement.selected;
                         option.classList.toggle('selected');
 
-                        const selectedRoles = Array.from(select.selectedOptions).map(opt => opt.value);
+                        const selectedRoles = Array.from(select.selectedOptions).map(opt => opt
+                            .value);
                         const input = dropdown.querySelector('.roles-input');
                         input.value = selectedRoles.join(',');
                         updateDisplay(display, select);
